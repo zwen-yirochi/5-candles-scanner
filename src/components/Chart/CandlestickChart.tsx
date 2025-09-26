@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useChart } from '../../hooks/useChart';
+import { usePatternAnalysis } from '../../hooks/usePatternAnalysis';
 import { CandleData } from '../../types/candle.types';
 import { candleToPixels } from '../../utils/domainToRange';
 import Candlestick from './Candlestick';
+import { Crosshair } from './Crosshair';
+import { HighLowLines } from './HighLowLines';
+import { PatternLayer } from './PatternLayer';
 import { PriceAxis } from './PriceAxis';
 import { TimeAxis } from './TimeAxis';
 
@@ -14,7 +18,24 @@ interface Props {
 
 export const CandlestickChart: React.FC<Props> = ({ data, width = 800, height = 400 }) => {
     const chart = useChart(data, width, height);
+    const { timeframeData, patterns, loading, error } = usePatternAnalysis('BTCUSDT');
 
+    useEffect(() => {
+        if (!loading && !error) {
+            console.log('=== 현재 로드된 데이터 개수 ===');
+            Object.entries(timeframeData).forEach(([timeframe, data]) => {
+                console.log(`${timeframe}: ${data.length}개 캔들`);
+            });
+
+            console.log('=== 검출된 패턴 총계 ===');
+            let totalPatterns = 0;
+            Object.entries(patterns).forEach(([timeframe, patternList]) => {
+                console.log(`${timeframe}: ${patternList.length}개 패턴`);
+                totalPatterns += patternList.length;
+            });
+            console.log(`전체 패턴 수: ${totalPatterns}개`);
+        }
+    }, [timeframeData, patterns, loading, error]);
     if (data.length === 0) {
         return (
             <div className="flex items-center justify-center border rounded-lg h-96 bg-gray-50">
@@ -27,6 +48,7 @@ export const CandlestickChart: React.FC<Props> = ({ data, width = 800, height = 
         <div className="bg-black border-2shadow-lg">
             {/* 차트 + 축 */}
             <div className="p-4">
+                {/* <PatternControlPanel /> */}
                 <div className="flex">
                     {/* 메인 차트 */}
                     <div>
@@ -36,15 +58,6 @@ export const CandlestickChart: React.FC<Props> = ({ data, width = 800, height = 
                             onWheel={chart.handleWheel}
                             onMouseDown={chart.handleMouseDown}
                         >
-                            {/* 그리드 */}
-                            {[0, 0.2, 0.4, 0.6, 0.8, 1].map((ratio, i) => (
-                                <div
-                                    key={i}
-                                    className="absolute left-0 right-0 border-t border-gray-200"
-                                    style={{ top: `${ratio * height}px` }}
-                                />
-                            ))}
-
                             {/* 캔들스틱 */}
                             {chart.visibleData.map((candle, i) => {
                                 const actualIndex = chart.domain.index.startIndex + i;
@@ -52,6 +65,15 @@ export const CandlestickChart: React.FC<Props> = ({ data, width = 800, height = 
 
                                 return <Candlestick key={actualIndex} data={candle} {...pos} />;
                             })}
+
+                            {/* 패턴 레이어 */}
+                            <PatternLayer width={width} height={height} />
+
+                            {/* 최고/최저 라인 */}
+                            <HighLowLines width={width} height={height} />
+
+                            {/* 십자선 */}
+                            <Crosshair width={width} height={height} />
                         </div>
 
                         {/* X축 (시간) */}

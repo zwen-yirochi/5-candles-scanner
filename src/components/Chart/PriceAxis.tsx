@@ -1,8 +1,9 @@
 import { useAtom, useAtomValue } from 'jotai';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useZoomDrag } from '../../hooks/useZoomDrag';
 import { visibleDataAtom } from '../../stores/atoms/dataAtoms';
 import { priceDomainAtom } from '../../stores/atoms/domainAtoms';
+import { formatPrice, getVisiblePriceLabels } from '../../utils/priceLabel';
 
 interface PriceAxisProps {
     height: number;
@@ -13,25 +14,44 @@ export const PriceAxis: React.FC<PriceAxisProps> = ({ height, width = 80 }) => {
     const [priceDomain, setPriceDomain] = useAtom(priceDomainAtom);
     const visibleData = useAtomValue(visibleDataAtom);
 
-    // 줌 함수 - 중심 고정
+    // 보이는 라벨만 필터링
+    const { labels: visibleLabels, step } = useMemo(() => {
+        return getVisiblePriceLabels(
+            priceDomain.minPrice,
+            priceDomain.maxPrice,
+            12 // 최대 라벨 수
+        );
+    }, [priceDomain]);
+
+    // 라벨 위치 계산
+    const labelData = useMemo(() => {
+        const priceRange = priceDomain.maxPrice - priceDomain.minPrice;
+
+        return visibleLabels.map((price) => ({
+            price,
+            y: height - ((price - priceDomain.minPrice) / priceRange) * height,
+            label: formatPrice(price, step),
+        }));
+    }, [visibleLabels, priceDomain, height, step]);
+
+    // 줌 함수
     const handleZoom = (factor: number) => {
         const center = (priceDomain.minPrice + priceDomain.maxPrice) / 2;
         const currentRange = priceDomain.maxPrice - priceDomain.minPrice;
         const newRange = currentRange * factor;
 
-        // 최소 범위 제한
-        if (newRange < 100) return;
+        if (newRange < 1) return;
 
-        const minPrice = center - newRange / 2;
-        const maxPrice = center + newRange / 2;
-
-        setPriceDomain({ minPrice, maxPrice });
+        setPriceDomain({
+            minPrice: center - newRange / 2,
+            maxPrice: center + newRange / 2,
+        });
     };
 
-    const { handleMouseDown } = useZoomDrag({
+    const { isDragging, handleMouseDown } = useZoomDrag({
         onZoom: handleZoom,
         sensitivity: 0.01,
-        direction: 'vertical', // 위아래 드래그
+        direction: 'vertical',
     });
 
     // 자동 맞춤
@@ -40,52 +60,55 @@ export const PriceAxis: React.FC<PriceAxisProps> = ({ height, width = 80 }) => {
         const prices = visibleData.flatMap((d) => [d.high, d.low]);
         const min = Math.min(...prices);
         const max = Math.max(...prices);
-        const padding = (max - min) * 0.1;
+        const padding = (max - min) * 0.15;
         setPriceDomain({
             minPrice: min - padding,
             maxPrice: max + padding,
         });
     };
 
-    // Y축 라벨 생성
-    const labels = [];
-    const labelCount = 5;
-    for (let i = 0; i <= labelCount; i++) {
-        const price = priceDomain.minPrice + (priceDomain.maxPrice - priceDomain.minPrice) * (1 - i / labelCount);
-        labels.push(price);
-    }
-
-    const centerPrice = (priceDomain.minPrice + priceDomain.maxPrice) / 2;
-
     return (
-        <div
-            className={`relative  border-r-2 border-gray-300 
-                cursor-ns-resize select-none transition-colors bg-gray-100`}
-            style={{ width, height }}
-            onMouseDown={handleMouseDown}
-        >
-            {/* 가격 라벨 */}
-            <div className="absolute inset-0 flex flex-col justify-between py-2 pr-12">
-                {labels.map((price, i) => (
-                    <div
-                        key={i}
-                        className={`text-xs font-mono text-right ${
-                            Math.abs(price - centerPrice) < (priceDomain.maxPrice - priceDomain.minPrice) * 0.05
-                                ? 'text-red-600 font-bold'
-                                : 'text-gray-700'
-                        }`}
-                    >
-                        ${price.toFixed(0)}
-                    </div>
-                ))}
-            </div>
+        <div className="relative">
+            <div
+                className={`relative bg-gradient-to-r from-gray-800 to-gray-900 border-r-2 border-gray-600 
+                cursor-ns-resize select-none transition-colors ${
+                    isDragging ? 'bg-blue-900' : 'hover:from-gray-700 hover:to-gray-800'
+                }`}
+                style={{ width, height }}
+                onMouseDown={handleMouseDown}
+            >
+                {/* 드래그 인디케이터 */}
+                <div className="absolute inset-y-0 right-0 flex flex-col items-center justify-center w-8 gap-1">
+                    {[...Array(3)].map((_, i) => (
+                        <div key={i} className="w-1 h-1 bg-gray-500 rounded-full" />
+                    ))}
+                </div>
 
+                {/* 가격 라벨 */}
+                <div className="absolute inset-0 pr-10">
+                    {labelData.map((item, i) => (
+                        <div
+                            key={item.price}
+                            className="absolute right-0 flex items-center gap-2"
+                            style={{ top: `${item.y}px`, transform: 'translateY(-50%)' }}
+                        >
+                            {/* 그리드 연결선 */}
+                            <div className="w-2 h-px bg-gray-500" />
+
+                            {/* 가격 */}
+                            <div className="px-2 py-0.5 text-xs font-mono text-gray-200 bg-gray-800 rounded">
+                                ${item.label}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
             {/* 자동 맞춤 버튼 */}
             <button
                 onClick={autoFit}
-                className="absolute bottom-0 px-2 py-1 text-xs text-white transition-colors transform -translate-x-1/2 -translate-y-1/2 bg-blue-500 rounded left-1/2 hover:bg-blue-600"
+                className="absolute w-full p-1 text-xs text-white transform -translate-x-1/2 bg-gray-500 left-1/2 hover:bg-gray-700"
             >
-                맞춤
+                Auto Fit
             </button>
         </div>
     );

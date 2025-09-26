@@ -1,8 +1,9 @@
+// hooks/useChart.ts - X/Y 드래그 패닝
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useState } from 'react';
 import { autoFitYAtom, initializeChartAtom, zoomXAtom } from '../stores/atoms/actionAtoms';
 import { visibleDataAtom } from '../stores/atoms/dataAtoms';
-import { chartDomainAtom, indexDomainAtom } from '../stores/atoms/domainAtoms';
+import { chartDomainAtom, indexDomainAtom, priceDomainAtom } from '../stores/atoms/domainAtoms';
 import { chartRangeAtom } from '../stores/atoms/rangeAtoms';
 import { CandleData } from '../types';
 
@@ -11,13 +12,14 @@ export const useChart = (data: CandleData[], width: number, height: number) => {
     const range = useAtomValue(chartRangeAtom);
     const visibleData = useAtomValue(visibleDataAtom);
     const [indexDomain, setIndexDomain] = useAtom(indexDomainAtom);
+    const [priceDomain, setPriceDomain] = useAtom(priceDomainAtom);
 
     const initializeChart = useSetAtom(initializeChartAtom);
     const zoomX = useSetAtom(zoomXAtom);
     const autoFitY = useSetAtom(autoFitYAtom);
 
     const [isDragging, setIsDragging] = useState(false);
-    const [dragStart, setDragStart] = useState(0);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
         if (data.length > 0) {
@@ -29,33 +31,49 @@ export const useChart = (data: CandleData[], width: number, height: number) => {
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
         e.preventDefault();
         setIsDragging(true);
-        setDragStart(e.clientX);
+        setDragStart({ x: e.clientX, y: e.clientY });
     }, []);
 
-    // 드래그 중
+    // 드래그 중 - X/Y 동시 처리
     const handleMouseMove = useCallback(
         (e: MouseEvent) => {
             if (!isDragging) return;
 
-            const deltaX = e.clientX - dragStart;
-            const indexRange = indexDomain.endIndex - indexDomain.startIndex;
-            const indexPerPixel = indexRange / width;
-            const indexDelta = -deltaX * indexPerPixel;
+            const deltaX = e.clientX - dragStart.x;
+            const deltaY = e.clientY - dragStart.y;
 
-            const newStart = indexDomain.startIndex + indexDelta;
-            const newEnd = indexDomain.endIndex + indexDelta;
+            // X축 패닝 (시간)
+            if (Math.abs(deltaX) > 1) {
+                const indexRange = indexDomain.endIndex - indexDomain.startIndex;
+                const indexPerPixel = indexRange / width;
+                const indexDelta = -deltaX * indexPerPixel;
 
-            // 왼쪽 경계만 체크 (오른쪽은 자유롭게)
-            if (newStart >= 0) {
-                setIndexDomain({
-                    startIndex: newStart,
-                    endIndex: newEnd,
+                const newStart = indexDomain.startIndex + indexDelta;
+                const newEnd = indexDomain.endIndex + indexDelta;
+
+                if (newStart >= 0) {
+                    setIndexDomain({
+                        startIndex: newStart,
+                        endIndex: newEnd,
+                    });
+                }
+            }
+
+            // Y축 패닝 (가격)
+            if (Math.abs(deltaY) > 1) {
+                const priceRange = priceDomain.maxPrice - priceDomain.minPrice;
+                const pricePerPixel = priceRange / height;
+                const priceDelta = deltaY * pricePerPixel; // Y는 위가 작은 값
+
+                setPriceDomain({
+                    minPrice: priceDomain.minPrice + priceDelta,
+                    maxPrice: priceDomain.maxPrice + priceDelta,
                 });
             }
 
-            setDragStart(e.clientX);
+            setDragStart({ x: e.clientX, y: e.clientY });
         },
-        [isDragging, dragStart, indexDomain, width, setIndexDomain]
+        [isDragging, dragStart, indexDomain, priceDomain, width, height, setIndexDomain, setPriceDomain]
     );
 
     // 드래그 종료

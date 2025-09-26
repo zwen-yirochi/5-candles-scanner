@@ -112,6 +112,9 @@ const ChartContainer = () => {
     return (
         <div className="min-h-screen bg-black">
             {/* 헤더 */}
+            <div className="pt-4 mb-8">
+                <h1 className="mb-2 text-3xl font-bold text-gray-100">5-Candles Scanner</h1>
+            </div>
             {stats && (
                 <ChartHeader
                     symbol={symbol}

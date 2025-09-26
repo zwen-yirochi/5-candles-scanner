@@ -1,8 +1,9 @@
 import { useAtom, useAtomValue } from 'jotai';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useZoomDrag } from '../../hooks/useZoomDrag';
 import { rawDataAtom } from '../../stores/atoms/dataAtoms';
 import { indexDomainAtom } from '../../stores/atoms/domainAtoms';
+import { findClosestDataIndex, formatTimestamp, getVisibleTimeLabels } from '../../utils/timeLabels';
 
 interface TimeAxisProps {
     width: number;
@@ -13,20 +14,49 @@ export const TimeAxis: React.FC<TimeAxisProps> = ({ width, height = 60 }) => {
     const [indexDomain, setIndexDomain] = useAtom(indexDomainAtom);
     const data = useAtomValue(rawDataAtom);
 
-    // 줌 함수 - endIndex 고정, startIndex만 조절
+    // 보이는 라벨 계산
+    const { labelData, format, interval } = useMemo(() => {
+        const { timestamps, format, interval } = getVisibleTimeLabels(
+            data,
+            indexDomain.startIndex,
+            indexDomain.endIndex,
+            8
+        );
+
+        const indexRange = indexDomain.endIndex - indexDomain.startIndex;
+
+        return {
+            labelData: timestamps.map((ts) => {
+                const index = findClosestDataIndex(
+                    data,
+                    ts,
+                    Math.floor(indexDomain.startIndex),
+                    Math.ceil(indexDomain.endIndex)
+                );
+
+                return {
+                    timestamp: ts,
+                    index,
+                    x: ((index - indexDomain.startIndex) / indexRange) * width,
+                    label: formatTimestamp(ts, format),
+                };
+            }),
+            format,
+            interval,
+        };
+    }, [indexDomain, data, width]);
+
+    // 줌 함수
     const handleZoom = (factor: number) => {
-        const fixedEnd = indexDomain.endIndex; // 오른쪽 끝 고정
+        const fixedEnd = indexDomain.endIndex;
         const currentRange = indexDomain.endIndex - indexDomain.startIndex;
         const newRange = currentRange * factor;
 
-        // 최소/최대 범위 제한
         if (newRange < 10) return;
         if (newRange > fixedEnd + 1) return;
 
-        const newStart = fixedEnd - newRange;
-
         setIndexDomain({
-            startIndex: Math.max(0, newStart),
+            startIndex: Math.max(0, fixedEnd - newRange),
             endIndex: fixedEnd,
         });
     };
@@ -34,38 +64,54 @@ export const TimeAxis: React.FC<TimeAxisProps> = ({ width, height = 60 }) => {
     const { isDragging, handleMouseDown } = useZoomDrag({
         onZoom: handleZoom,
         sensitivity: 0.01,
-        direction: 'horizontal', // 좌우 드래그
+        direction: 'horizontal',
     });
 
-    // 시간 포맷
-    const formatTime = (index: number) => {
-        if (!data[Math.floor(index)]) return '';
-        const timestamp = data[Math.floor(index)].timestamp;
-        return new Date(timestamp).toLocaleDateString('ko-KR', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-        });
-    };
+    const intervalText = useMemo(() => {
+        if (interval >= 86400000) return `${interval / 86400000}일`;
+        if (interval >= 3600000) return `${interval / 3600000}시간`;
+        if (interval >= 60000) return `${interval / 60000}분`;
+        return `${interval / 1000}초`;
+    }, [interval]);
 
     return (
         <div
-            className={`relative bg-gradient-to-b from-gray-100 to-gray-200 border-t-2 border-gray-300 
+            className={`relative bg-gradient-to-b from-gray-800 to-gray-900 border-t-2 border-gray-600 
                 cursor-ew-resize select-none transition-colors ${
-                    isDragging ? 'bg-blue-100' : 'hover:from-gray-200 hover:to-gray-300'
+                    isDragging ? 'bg-blue-900' : 'hover:from-gray-700 hover:to-gray-800'
                 }`}
             style={{ width, height }}
             onMouseDown={handleMouseDown}
         >
-            {/* 정보 표시 */}
-            <div className="absolute inset-x-0 flex items-center justify-between px-4 text-sm bottom-2">
-                <div className="flex flex-col items-start">
-                    <span className="font-mono text-gray-700">{formatTime(indexDomain.startIndex)}</span>
-                </div>
+            {/* 드래그 인디케이터 */}
+            <div className="absolute inset-x-0 flex items-center justify-center gap-1 top-2">
+                {[...Array(3)].map((_, i) => (
+                    <div key={i} className="w-1 h-1 bg-gray-500 rounded-full" />
+                ))}
+            </div>
 
-                <div className="flex flex-col items-end">
-                    <span className="font-mono text-gray-700">{formatTime(indexDomain.endIndex)}</span>
-                </div>
+            {/* 시간 라벨 */}
+            <div className="absolute inset-x-0 bottom-2">
+                {labelData.map((item, i) => (
+                    <div
+                        key={item.timestamp}
+                        className="absolute flex flex-col items-center transform -translate-x-1/2"
+                        style={{ left: `${item.x}px` }}
+                    >
+                        <div className="w-px h-2 mb-1 bg-gray-500" />
+                        <div className="px-2 py-0.5 text-xs font-mono text-gray-200 bg-gray-800 rounded whitespace-nowrap">
+                            {item.label}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* 고정점 */}
+            <div className="absolute w-px h-full bg-red-500 opacity-30" style={{ right: '0px' }} />
+
+            {/* 간격 정보 */}
+            <div className="absolute px-2 py-1 text-xs text-gray-400 bg-gray-900 rounded top-2 left-2">
+                {intervalText} 간격
             </div>
         </div>
     );

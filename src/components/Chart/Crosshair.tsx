@@ -1,0 +1,91 @@
+import { useAtomValue } from 'jotai';
+import React, { useCallback, useState } from 'react';
+import { visibleDataAtom } from '../../stores/atoms/dataAtoms';
+import { indexDomainAtom, priceDomainAtom } from '../../stores/atoms/domainAtoms';
+
+interface CrosshairProps {
+    width: number;
+    height: number;
+}
+
+export const Crosshair: React.FC<CrosshairProps> = ({ width, height }) => {
+    const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+    const visibleData = useAtomValue(visibleDataAtom);
+    const indexDomain = useAtomValue(indexDomainAtom);
+    const priceDomain = useAtomValue(priceDomainAtom);
+
+    const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        setMousePos({ x, y });
+    }, []);
+
+    const handleMouseLeave = useCallback(() => {
+        setMousePos(null);
+    }, []);
+
+    const pixelToPrice = (y: number): number => {
+        const range = priceDomain.maxPrice - priceDomain.minPrice;
+        return priceDomain.maxPrice - (y / height) * range;
+    };
+
+    const pixelToTime = (x: number): string => {
+        const indexRange = indexDomain.endIndex - indexDomain.startIndex;
+        const relativeIndex = (x / width) * indexRange;
+        const hoveredIndex = Math.floor(relativeIndex);
+
+        if (hoveredIndex >= 0 && hoveredIndex < visibleData.length) {
+            const candle = visibleData[hoveredIndex];
+            return new Date(candle.timestamp).toLocaleString('ko-KR', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+        }
+        return '';
+    };
+
+    const currentPrice = mousePos ? pixelToPrice(mousePos.y) : 0;
+    const currentTime = mousePos ? pixelToTime(mousePos.x) : '';
+    return (
+        <>
+            {/* 투명 오버레이 (이벤트 캡처용) */}
+            <div className="absolute inset-0 z-10" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} />
+
+            {mousePos && (
+                <>
+                    {/* 수직선 */}
+                    <div
+                        className="absolute top-0 bottom-0 z-20 w-px bg-gray-400 pointer-events-none"
+                        style={{ left: `${mousePos.x}px` }}
+                    />
+
+                    {/* 수평선 */}
+                    <div
+                        className="absolute left-0 right-0 z-20 h-px bg-gray-400 pointer-events-none"
+                        style={{ top: `${mousePos.y}px` }}
+                    />
+
+                    {/* 가격 라벨 (우측) */}
+                    <div
+                        className="absolute right-0 z-20 px-2 py-1 font-mono text-xs text-white transform -translate-y-1/2 bg-gray-700 pointer-events-none"
+                        style={{ top: `${mousePos.y}px` }}
+                    >
+                        ${currentPrice.toFixed(2)}
+                    </div>
+                    {/* 시간 라벨 (하단) */}
+                    {currentTime && (
+                        <div
+                            className="absolute bottom-0 z-20 px-2 py-1 font-mono text-xs text-white transform -translate-x-1/2 bg-gray-700 pointer-events-none"
+                            style={{ left: `${mousePos.x}px` }}
+                        >
+                            {currentTime}
+                        </div>
+                    )}
+                </>
+            )}
+        </>
+    );
+};
