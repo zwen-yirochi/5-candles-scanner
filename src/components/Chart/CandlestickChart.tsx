@@ -6,7 +6,8 @@ import { candleToPixels } from '../../utils/domainToRange';
 import Candlestick from './Candlestick';
 import { Crosshair } from './Crosshair';
 import { HighLowLines } from './HighLowLines';
-import { PatternLayer } from './PatternLayer';
+import { PatternControlPanel } from './PatternControlPanel';
+import { PatternOverlay } from './PatternOverlay';
 import { PriceAxis } from './PriceAxis';
 import { TimeAxis } from './TimeAxis';
 
@@ -48,7 +49,7 @@ export const CandlestickChart: React.FC<Props> = ({ data, width = 800, height = 
         <div className="bg-black border-2shadow-lg">
             {/* 차트 + 축 */}
             <div className="p-4">
-                {/* <PatternControlPanel /> */}
+                <PatternControlPanel />
                 <div className="flex">
                     {/* 메인 차트 */}
                     <div>
@@ -67,8 +68,7 @@ export const CandlestickChart: React.FC<Props> = ({ data, width = 800, height = 
                             })}
 
                             {/* 패턴 레이어 */}
-                            <PatternLayer width={width} height={height} />
-
+                            <PatternOverlay width={width} height={height} />
                             {/* 최고/최저 라인 */}
                             <HighLowLines width={width} height={height} />
 

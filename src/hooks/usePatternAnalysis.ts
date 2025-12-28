@@ -18,7 +18,7 @@ export const usePatternAnalysis = (symbol: string) => {
         console.log(`시작: ${symbol} 패턴 분석용 데이터 로딩`);
 
         try {
-            const data = await TimeframeDataService.fetchAllTimeframes(symbol, 100);
+            const data = await TimeframeDataService.fetchAllTimeframes(symbol, 2400);
             setTimeframeData(data);
             console.log('데이터 atom 업데이트 완료 - 패턴 분석 시작');
         } catch (err) {

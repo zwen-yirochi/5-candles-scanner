@@ -94,7 +94,9 @@ export const useChart = (data: CandleData[], width: number, height: number) => {
 
     const handleWheel = useCallback(
         (e: React.WheelEvent) => {
-            e.preventDefault();
+            if (!e.defaultPrevented && e.cancelable) {
+                e.preventDefault();
+            }
             const factor = e.deltaY > 0 ? 1.1 : 0.9;
             zoomX(factor);
             setTimeout(() => autoFitY(), 0);
