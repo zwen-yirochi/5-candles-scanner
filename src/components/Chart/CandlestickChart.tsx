@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { CHART_COLORS, CHART_DIMENSIONS } from '../../constants/chart.constants';
+import { CHART_COLORS } from '../../constants/chart.constants';
 import { useChart } from '../../hooks/useChart';
 import { usePatternAnalysis } from '../../hooks/usePatternAnalysis';
 import { CandleData } from '../../types/candle.types';
@@ -15,15 +15,11 @@ import { TimeAxis } from './TimeAxis';
 
 export interface CandlestickChartProps {
   data: CandleData[];
-  width?: number;
-  height?: number;
+  width: number;
+  height: number;
 }
 
-export const CandlestickChart: React.FC<CandlestickChartProps> = ({
-  data,
-  width = CHART_DIMENSIONS.DEFAULT_WIDTH,
-  height = CHART_DIMENSIONS.DEFAULT_HEIGHT,
-}) => {
+export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width, height }) => {
   const chart = useChart(data, width, height);
   const { timeframeData, patterns, loading, error } = usePatternAnalysis('BTCUSDT');
 
@@ -61,16 +57,18 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({
     );
   }
 
+  width -= 40;
+
   return (
     <div className="bg-black border-2 shadow-lg">
       <div className="p-4">
         {/* Pattern Control Panel */}
         <PatternControlPanel />
-        <div className="flex">
+        <div className="flex w-full">
           {/* Main Chart */}
           <div>
             <div
-              className={`relative overflow-hidden ${CHART_COLORS.BACKGROUND} border-2 border-gray-600`}
+              className={`relative overflow-hidden ${CHART_COLORS.BACKGROUND} `}
               style={{ width, height }}
               onWheel={chart.handleWheel}
               onMouseDown={chart.handleMouseDown}
