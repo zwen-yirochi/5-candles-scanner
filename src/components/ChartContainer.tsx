@@ -1,55 +1,61 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { CHART_DIMENSIONS, DEFAULT_INTERVAL, DEFAULT_LIMIT, DEFAULT_SYMBOL } from '../constants/chart.constants';
 import { useChartData } from '../hooks/useChartData';
+import { useResizeObserver } from '../hooks/useResizeObserver';
 import { CandlestickChart } from './Chart/CandlestickChart';
 import { ChartHeader } from './Chart/ChartHeader';
 import { ErrorMessage, LoadingSpinner } from './common';
 
 const ChartContainer = () => {
-    const [symbol, setSymbol] = useState(DEFAULT_SYMBOL);
-    const [interval, setInterval] = useState(DEFAULT_INTERVAL);
+  const [symbol, setSymbol] = useState(DEFAULT_SYMBOL);
+  const [interval, setInterval] = useState(DEFAULT_INTERVAL);
+  const { ref, width: containerWidth, height: containerHeight } = useResizeObserver();
+  const { chartData, stats, loading, error, refetch } = useChartData({
+    symbol,
+    interval,
+    limit: DEFAULT_LIMIT,
+  });
 
-    const { chartData, stats, loading, error, refetch } = useChartData({
-        symbol,
-        interval,
-        limit: DEFAULT_LIMIT,
-    });
+  // 축과 패딩을 고려한 실제 차트 크기 계산
+  const chartDimensions = useMemo(() => {
+    // 패딩 및 여백 고려 (패딩 16px * 2 = 32px, 축 크기)
+    const padding = 32;
+    const width = Math.max(0, containerWidth - padding - CHART_DIMENSIONS.AXIS_WIDTH);
+    const height = Math.max(0, containerHeight - padding - CHART_DIMENSIONS.AXIS_HEIGHT);
+    return { width, height };
+  }, [containerWidth, containerHeight]);
 
-    if (loading && chartData.length === 0) {
-        return <LoadingSpinner message="데이터 로딩 중..." />;
-    }
+  if (loading && chartData.length === 0) {
+    return <LoadingSpinner message="데이터 로딩 중..." />;
+  }
 
-    if (error && chartData.length === 0) {
-        return <ErrorMessage message={error} onRetry={refetch} />;
-    }
+  if (error && chartData.length === 0) {
+    return <ErrorMessage message={error} onRetry={refetch} />;
+  }
 
-    return (
-        <div className="min-h-screen bg-black">
-            {stats && (
-                <ChartHeader
-                    symbol={symbol}
-                    interval={interval}
-                    onSymbolChange={setSymbol}
-                    onIntervalChange={setInterval}
-                    stats={stats}
-                />
-            )}
+  return (
+    <div className="min-h-screen bg-black">
+      {stats && (
+        <ChartHeader
+          symbol={symbol}
+          interval={interval}
+          onSymbolChange={setSymbol}
+          onIntervalChange={setInterval}
+          stats={stats}
+        />
+      )}
 
-            <div className="p-4">
-                {chartData.length > 0 ? (
-                    <CandlestickChart
-                        data={chartData}
-                        width={CHART_DIMENSIONS.DEFAULT_WIDTH}
-                        height={CHART_DIMENSIONS.DEFAULT_HEIGHT}
-                    />
-                ) : (
-                    <div className="flex items-center justify-center bg-gray-800 border border-gray-700 rounded-lg h-96">
-                        <p className="text-gray-500">차트 데이터를 불러오는 중...</p>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+      <div ref={ref} className="w-full h-[calc(80vh-120px)] p-4">
+        {chartData.length > 0 && chartDimensions.width > 0 && chartDimensions.height > 0 ? (
+          <CandlestickChart data={chartData} width={chartDimensions.width} height={chartDimensions.height} />
+        ) : (
+          <div className="flex items-center justify-center h-full bg-gray-800 border border-gray-700 rounded-lg">
+            <p className="text-gray-500">차트 데이터를 불러오는 중...</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default ChartContainer;
