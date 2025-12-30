@@ -1,3 +1,5 @@
+import { LOCALE } from '../constants/chart.constants';
+
 interface TimeLabelSet {
     interval: number; // 밀리초
     minRange: number; // 이 간격을 사용할 최소 시간 범위
@@ -171,7 +173,7 @@ export const findClosestDataIndex = (
 export const formatTimestamp = (
     timestamp: number,
     format: Intl.DateTimeFormatOptions,
-    locale: string = 'ko-KR'
+    locale: string = LOCALE.TIME_LABEL
 ): string => {
     return new Date(timestamp).toLocaleString(locale, format);
 };

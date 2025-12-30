@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { CHART_COLORS } from '../../constants/chart.constants';
+import { CHART_COLORS, CHART_DIMENSIONS } from '../../constants/chart.constants';
 import { useChart } from '../../hooks/useChart';
 import { usePatternAnalysis } from '../../hooks/usePatternAnalysis';
 import { CandleData } from '../../types/candle.types';
@@ -20,7 +20,8 @@ export interface CandlestickChartProps {
 }
 
 export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width, height }) => {
-  const chart = useChart(data, width, height);
+  const chartWidth = width - CHART_DIMENSIONS.AXIS_WIDTH;
+  const chart = useChart(data, chartWidth, height);
   const { timeframeData, patterns, loading, error } = usePatternAnalysis('BTCUSDT');
 
   // Calculate grid lines based on price labels
@@ -57,8 +58,6 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
     );
   }
 
-  width -= 40;
-
   return (
     <div className="bg-black border-2 shadow-lg">
       <div className="p-4">
@@ -69,7 +68,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
           <div>
             <div
               className={`relative overflow-hidden ${CHART_COLORS.BACKGROUND} `}
-              style={{ width, height }}
+              style={{ width: chartWidth, height }}
               onWheel={chart.handleWheel}
               onMouseDown={chart.handleMouseDown}
             >
@@ -90,17 +89,17 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
               })}
 
               {/* Pattern Overlay */}
-              <PatternOverlay width={width} height={height} />
+              <PatternOverlay width={chartWidth} height={height} />
 
               {/* High/Low Lines */}
-              <HighLowLines width={width} height={height} />
+              <HighLowLines width={chartWidth} height={height} />
 
               {/* Crosshair */}
-              <Crosshair width={width} height={height} />
+              <Crosshair width={chartWidth} height={height} />
             </div>
 
             {/* Time Axis */}
-            <TimeAxis width={width} />
+            <TimeAxis width={chartWidth} />
           </div>
 
           {/* Price Axis */}

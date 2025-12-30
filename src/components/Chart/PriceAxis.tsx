@@ -54,7 +54,7 @@ export const PriceAxis: React.FC<PriceAxisProps> = ({ height, width = CHART_DIME
     const prices = visibleData.flatMap((d) => [d.high, d.low]);
     const min = Math.min(...prices);
     const max = Math.max(...prices);
-    const padding = (max - min) * 0.15;
+    const padding = (max - min) * CHART_DIMENSIONS.PADDING.AUTO_FIT;
 
     setPriceDomain({
       minPrice: min - padding,

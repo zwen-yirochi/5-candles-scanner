@@ -24,6 +24,11 @@ export const CHART_DIMENSIONS = {
   DEFAULT_HEIGHT: 880,
   AXIS_HEIGHT: 60,
   AXIS_WIDTH: 80,
+  PADDING: {
+    PRICE: 0.1,
+    INITIAL_PRICE: 0.1,
+    AUTO_FIT: 0.15,
+  },
 } as const;
 
 export const CHART_COLORS = {
@@ -65,4 +70,8 @@ export const AXIS = {
 
 export const GRID = {
   HORIZONTAL_LINES: [0, 0.2, 0.4, 0.6, 0.8, 1],
+} as const;
+
+export const LOCALE = {
+  TIME_LABEL: 'ko-KR',
 } as const;

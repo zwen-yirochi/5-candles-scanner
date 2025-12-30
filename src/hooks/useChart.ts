@@ -118,9 +118,8 @@ export const useChart = (data: CandleData[], width: number, height: number) => {
       }
       const factor = e.deltaY > 0 ? 1.1 : 0.9;
       zoomX(factor);
-      setTimeout(() => autoFitY(), 0);
     },
-    [zoomX, autoFitY],
+    [zoomX],
   );
 
   return {

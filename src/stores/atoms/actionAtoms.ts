@@ -1,4 +1,5 @@
 import { atom } from 'jotai';
+import { CHART_DIMENSIONS } from '../../constants/chart.constants';
 import { CandleData } from '../../types/candle.types';
 import { rawDataAtom, visibleDataAtom } from './dataAtoms';
 import { indexDomainAtom, priceDomainAtom } from './domainAtoms';
@@ -36,7 +37,7 @@ export const initializeChartAtom = atom(
         const prices = visibleData.flatMap((d) => [d.open, d.high, d.low, d.close]);
         const minPrice = Math.min(...prices);
         const maxPrice = Math.max(...prices);
-        const padding = (maxPrice - minPrice) * 0.1;
+        const padding = (maxPrice - minPrice) * CHART_DIMENSIONS.PADDING.INITIAL_PRICE;
 
         set(priceDomainAtom, {
             minPrice: minPrice - padding,
@@ -82,7 +83,7 @@ export const autoFitYAtom = atom(null, (get, set) => {
     const prices = visibleData.flatMap((d) => [d.open, d.high, d.low, d.close]);
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
-    const padding = (maxPrice - minPrice) * 0.1;
+    const padding = (maxPrice - minPrice) * CHART_DIMENSIONS.PADDING.PRICE;
 
     set(priceDomainAtom, {
         minPrice: minPrice - padding,
