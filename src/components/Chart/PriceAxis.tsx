@@ -88,9 +88,9 @@ export const PriceAxis: React.FC<PriceAxisProps> = ({ height, width = CHART_DIME
               style={{ top: `${item.y}px`, transform: 'translateY(-50%)' }}
             >
               {/* Grid Connection Line */}
-              <div className="w-2 h-px bg-gray-500" />
+              <div className="w-2 h-px bg-gray-600" />
               {/* Price */}
-              <div className="px-2 py-0.5 text-xs font-mono text-gray-200 bg-gray-800 rounded">${item.label}</div>
+              <div className="px-2 font-mono text-xs text-gray-200 rounded">${item.label}</div>
             </div>
           ))}
         </div>

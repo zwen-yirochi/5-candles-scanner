@@ -57,7 +57,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
     );
   }
 
-  width -= 40;
+  width -= 38;
 
   return (
     <div className="bg-black border-2 shadow-lg">
