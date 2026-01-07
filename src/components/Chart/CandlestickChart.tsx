@@ -24,8 +24,9 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
   const { timeframeData, patterns, loading, error } = usePatternAnalysis('BTCUSDT');
 
   const currentPrice = useMemo(() => {
-    return chart.visibleData.length > 0 ? chart.visibleData[chart.visibleData.length - 1].close : undefined;
-  }, [chart.visibleData]);
+    // 항상 전체 데이터의 최신 종가 사용 (차트 스크롤과 무관)
+    return data.length > 0 ? data[data.length - 1].close : undefined;
+  }, [data]);
 
   // Calculate grid lines based on price labels
   const gridLines = useMemo(() => {
