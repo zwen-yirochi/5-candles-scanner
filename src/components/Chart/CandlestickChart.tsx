@@ -24,8 +24,8 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
   const { timeframeData, patterns, loading, error } = usePatternAnalysis('BTCUSDT');
 
   const currentPrice = useMemo(() => {
-    return chart.visibleData.length > 0 ? chart.visibleData[chart.visibleData.length - 1].close : undefined;
-  }, [chart.visibleData]);
+    return data.length > 0 ? data[data.length - 1].close : undefined;
+  }, [data]);
 
   // Calculate grid lines based on price labels
   const gridLines = useMemo(() => {

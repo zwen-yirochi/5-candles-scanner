@@ -10,7 +10,7 @@ const ChartContainer = () => {
   const [symbol, setSymbol] = useState(DEFAULT_SYMBOL);
   const [interval, setInterval] = useState(DEFAULT_INTERVAL);
   const { ref, width: containerWidth, height: containerHeight } = useResizeObserver();
-  const { chartData, stats, loading, error, refetch } = useChartData({
+  const { chartData, stats, loading, error, refetch, isWebSocketConnected } = useChartData({
     symbol,
     interval,
     limit: DEFAULT_LIMIT,
@@ -18,7 +18,6 @@ const ChartContainer = () => {
 
   // 축과 패딩을 고려한 실제 차트 크기 계산
   const chartDimensions = useMemo(() => {
-    // 패딩 및 여백 고려 (패딩 16px * 2 = 32px, 축 크기)
     const padding = 32;
     const width = Math.max(0, containerWidth - padding - CHART_DIMENSIONS.AXIS_WIDTH);
     const height = Math.max(0, containerHeight - padding - CHART_DIMENSIONS.AXIS_HEIGHT);
@@ -42,6 +41,7 @@ const ChartContainer = () => {
           onSymbolChange={setSymbol}
           onIntervalChange={setInterval}
           stats={stats}
+          isWebSocketConnected={isWebSocketConnected}
         />
       )}
 

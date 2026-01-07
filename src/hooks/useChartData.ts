@@ -22,11 +22,8 @@ interface UseChartDataReturn {
 
 export const useChartData = ({
   symbol,
-
   interval,
-
   limit,
-
   enableWebSocket = true,
 }: UseChartDataParams): UseChartDataReturn => {
   const [rawResponse, setRawResponse] = useState<BinanceResponse[]>([]);

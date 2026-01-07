@@ -84,7 +84,7 @@ export const HighLowLines: React.FC<HighLowLinesProps> = ({ width, height }) => 
             top: '-12px',
           }}
         >
-          {highData.price.toLocaleString()}
+          {highData.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
         </div>
       </div>
       {/* 최저가 L자 라인 */}
@@ -106,7 +106,7 @@ export const HighLowLines: React.FC<HighLowLinesProps> = ({ width, height }) => 
             top: '-12px',
           }}
         >
-          {lowData.price.toLocaleString()}
+          {lowData.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
         </div>
       </div>
     </>
