@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetch24hrStats, fetchBinance } from '../services/api/fetchBinance';
 import { Binance24hrStats, BinanceResponse, CandleData, ChartStats } from '../types';
 
@@ -95,7 +95,7 @@ export const useChartData = ({
   }, [chartData, stats24hr]);
 
   // Fetch data
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -111,11 +111,11 @@ export const useChartData = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [interval, limit, symbol]);
 
   useEffect(() => {
     fetchData();
-  }, [symbol, interval, limit]);
+  }, [fetchData, symbol, interval, limit]);
 
   return {
     chartData,
