@@ -10,8 +10,10 @@ export const useChart = (data: CandleData[], width: number, height: number) => {
   const domain = useAtomValue(chartDomainAtom);
   const range = useAtomValue(chartRangeAtom);
   const visibleData = useAtomValue(visibleDataAtom);
+
   const [indexDomain, setIndexDomain] = useAtom(indexDomainAtom);
   const [priceDomain, setPriceDomain] = useAtom(priceDomainAtom);
+
   const initializeChart = useSetAtom(initializeChartAtom);
   const setRawData = useSetAtom(rawDataAtom);
   const zoomX = useSetAtom(zoomXAtom);
@@ -19,21 +21,23 @@ export const useChart = (data: CandleData[], width: number, height: number) => {
 
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
   const isInitializedRef = useRef(false);
   const prevDataLengthRef = useRef(0);
 
   useEffect(() => {
     if (data.length === 0) return;
+
     // 초기화되지 않았거나 크기가 변경된 경우에만 초기화
     if (!isInitializedRef.current || range.width !== width || range.height !== height) {
       initializeChart({ data, width, height });
       isInitializedRef.current = true;
       prevDataLengthRef.current = data.length;
     } else {
-      // 이미 초기화된 경우 데이터만 업데이트
       const dataLengthChanged = data.length !== prevDataLengthRef.current;
       const isNewCandle = dataLengthChanged && data.length > prevDataLengthRef.current;
       setRawData(data);
+
       // 새로운 캔들이 추가된 경우, 인덱스 도메인 조정
       if (isNewCandle) {
         const indexShift = data.length - prevDataLengthRef.current;
@@ -67,8 +71,8 @@ export const useChart = (data: CandleData[], width: number, height: number) => {
         const indexPerPixel = indexRange / width;
         const indexDelta = -deltaX * indexPerPixel;
 
-        const newStart = indexDomain.startIndex + indexDelta;
-        const newEnd = indexDomain.endIndex + indexDelta;
+        const newStart = Math.round(indexDomain.startIndex + indexDelta);
+        const newEnd = Math.round(indexDomain.endIndex + indexDelta);
 
         if (newStart >= 0) {
           setIndexDomain({
@@ -118,9 +122,8 @@ export const useChart = (data: CandleData[], width: number, height: number) => {
       }
       const factor = e.deltaY > 0 ? 1.1 : 0.9;
       zoomX(factor);
-      setTimeout(() => autoFitY(), 0);
     },
-    [zoomX, autoFitY],
+    [zoomX],
   );
 
   return {
