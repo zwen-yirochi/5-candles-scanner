@@ -29,19 +29,11 @@ export const CurrentPriceLine: React.FC<CurrentPriceLineProps> = ({ width, heigh
 
   const isUp = visibleData.length > 1 ? currentPrice >= visibleData[visibleData.length - 2].close : true;
   const lineColor = isUp ? 'bg-green-500' : 'bg-red-500';
-  const bgColor = isUp ? 'bg-green-500' : 'bg-red-500';
 
   return (
     <div className="absolute pointer-events-none" style={{ top: `${y}px`, left: 0, right: 0 }}>
       {/* 수평선 */}
       <div className={`absolute h-px ${lineColor}`} style={{ width: '100%', opacity: 0.8 }} />
-      {/* 가격 라벨 (오른쪽) */}
-      <div
-        className={`absolute px-2 py-1 font-mono text-xs text-white ${bgColor} rounded whitespace-nowrap`}
-        style={{ right: '-40px', top: '-12px' }}
-      >
-        {currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-      </div>
     </div>
   );
 };

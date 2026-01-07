@@ -9,8 +9,6 @@ import { Candlestick } from './Candlestick';
 import { Crosshair } from './Crosshair';
 import { CurrentPriceLine } from './CurrentPriceLine';
 import { HighLowLines } from './HighLowLines';
-import { PatternControlPanel } from './PatternControlPanel';
-import { PatternOverlay } from './PatternOverlay';
 import { PriceAxis } from './PriceAxis';
 import { TimeAxis } from './TimeAxis';
 
@@ -24,6 +22,10 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
   const chartWidth = width - 40;
   const chart = useChart(data, chartWidth, height);
   const { timeframeData, patterns, loading, error } = usePatternAnalysis('BTCUSDT');
+
+  const currentPrice = useMemo(() => {
+    return chart.visibleData.length > 0 ? chart.visibleData[chart.visibleData.length - 1].close : undefined;
+  }, [chart.visibleData]);
 
   // Calculate grid lines based on price labels
   const gridLines = useMemo(() => {
@@ -63,7 +65,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
     <div className="bg-black border-2 shadow-lg">
       <div className="p-4">
         {/* Pattern Control Panel */}
-        <PatternControlPanel />
+        {/* <PatternControlPanel /> */}
         <div className="flex w-full">
           {/* Main Chart */}
           <div>
@@ -90,7 +92,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
               })}
 
               {/* Pattern Overlay */}
-              <PatternOverlay width={chartWidth} height={height} />
+              {/* <PatternOverlay width={chartWidth} height={height} /> */}
 
               {/* High/Low Lines */}
               <HighLowLines width={chartWidth} height={height} />
@@ -107,7 +109,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
           </div>
 
           {/* Price Axis */}
-          <PriceAxis height={height} />
+          <PriceAxis height={height} currentPrice={currentPrice} />
         </div>
       </div>
     </div>
