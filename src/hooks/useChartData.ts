@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fetchBinance } from '../services/api/fetchBinance';
-import { BinanceResponse, CandleData, ChartStats } from '../types';
+import { fetch24hrStats, fetchBinance } from '../services/api/fetchBinance';
+import { Binance24hrStats, BinanceResponse, CandleData, ChartStats } from '../types';
 
 import { useBinanceWebSocket } from './useBinanceWebSocket';
 
@@ -30,20 +30,17 @@ export const useChartData = ({
   enableWebSocket = true,
 }: UseChartDataParams): UseChartDataReturn => {
   const [rawResponse, setRawResponse] = useState<BinanceResponse[]>([]);
-
+  const [stats24hr, setStats24hr] = useState<Binance24hrStats | null>(null);
   const [loading, setLoading] = useState(false);
-
   const [error, setError] = useState<string | null>(null);
 
   // 웹소켓으로 실시간 데이터 수신
-
   const { latestCandle, isConnected: isWebSocketConnected } = useBinanceWebSocket({
     symbol,
-
     interval,
-
     enabled: enableWebSocket,
   });
+
   // Transform API response to chart data
   const baseChartData: CandleData[] = useMemo(() => {
     return rawResponse.map((item) => ({
@@ -84,31 +81,33 @@ export const useChartData = ({
 
   // Calculate statistics
   const stats: ChartStats | null = useMemo(() => {
-    if (chartData.length === 0) return null;
+    if (chartData.length === 0 || !stats24hr) return null;
     const latest = chartData[chartData.length - 1];
-    const first = chartData[0];
-    const priceChange = latest.close - first.open;
-    const priceChangePercent = (priceChange / first.open) * 100;
-    const prices = chartData.flatMap((d) => [d.high, d.low]);
+    const priceChange = parseFloat(stats24hr.priceChange);
+    const priceChangePercent = parseFloat(stats24hr.priceChangePercent);
 
     return {
       currentPrice: latest.close,
       priceChange,
       priceChangePercent,
-      high: Math.max(...prices),
-      low: Math.min(...prices),
-      volume: chartData.reduce((sum, d) => sum + d.volume, 0),
+      high: parseFloat(stats24hr.highPrice),
+      low: parseFloat(stats24hr.lowPrice),
+      volume: parseFloat(stats24hr.volume),
       isPositive: priceChange >= 0,
     };
-  }, [chartData]);
+  }, [chartData, stats24hr]);
 
   // Fetch data
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const result = await fetchBinance(symbol, interval, limit);
-      setRawResponse(result);
+      const [klineResult, stats24hrResult] = await Promise.all([
+        fetchBinance(symbol, interval, limit),
+        fetch24hrStats(symbol),
+      ]);
+      setRawResponse(klineResult);
+      setStats24hr(stats24hrResult);
     } catch (err) {
       setError('데이터를 불러오는데 실패했습니다.');
       console.error('Fetch error:', err);
