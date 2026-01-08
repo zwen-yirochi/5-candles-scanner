@@ -1,11 +1,10 @@
-import React, { useEffect, useMemo } from 'react';
-import { CHART_COLORS } from '../../constants/chart.constants';
+// CandlestickChart.tsx
+import React, { useEffect, useMemo, useRef } from 'react';
+import { CANDLESTICK, CHART_COLORS } from '../../constants/chart.constants';
 import { useChart } from '../../hooks/useChart';
-import { usePatternAnalysis } from '../../hooks/usePatternAnalysis';
 import { CandleData } from '../../types/candle.types';
 import { candleToPixels } from '../../utils/domainToRange';
 import { getVisiblePriceLabels } from '../../utils/priceLabel';
-import { Candlestick } from './Candlestick';
 import { Crosshair } from './Crosshair';
 import { CurrentPriceLine } from './CurrentPriceLine';
 import { HighLowLines } from './HighLowLines';
@@ -21,13 +20,15 @@ export interface CandlestickChartProps {
 export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width, height }) => {
   const chartWidth = width - 40;
   const chart = useChart(data, chartWidth, height);
-  const { timeframeData, patterns, loading, error } = usePatternAnalysis('BTCUSDT');
+  // const { timeframeData, patterns, loading, error } = usePatternAnalysis('BTCUSDT');
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rafIdRef = useRef<number | null>(null);
 
   const currentPrice = useMemo(() => {
     return data.length > 0 ? data[data.length - 1].close : undefined;
   }, [data]);
 
-  // Calculate grid lines based on price labels
   const gridLines = useMemo(() => {
     const { labels } = getVisiblePriceLabels(chart.domain.price.minPrice, chart.domain.price.maxPrice, 10);
     const priceRange = chart.domain.price.maxPrice - chart.domain.price.minPrice;
@@ -38,20 +39,111 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
   }, [chart.domain.price, height]);
 
   useEffect(() => {
-    if (!loading && !error) {
-      console.log('=== Loaded Data Count ===');
-      Object.entries(timeframeData).forEach(([timeframe, data]) => {
-        console.log(`${timeframe}: ${data.length} candles`);
-      });
-      console.log('=== Detected Patterns ===');
-      let totalPatterns = 0;
-      Object.entries(patterns).forEach(([timeframe, patternList]) => {
-        console.log(`${timeframe}: ${patternList.length} patterns`);
-        totalPatterns += patternList.length;
-      });
-      console.log(`Total patterns: ${totalPatterns}`);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
     }
-  }, [timeframeData, patterns, loading, error]);
+
+    rafIdRef.current = requestAnimationFrame(() => {
+      rafIdRef.current = null;
+
+      const ctx = canvas.getContext('2d', {
+        alpha: false,
+        desynchronized: true,
+      });
+      if (!ctx) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const displayWidth = chartWidth;
+      const displayHeight = height;
+
+      canvas.width = displayWidth * dpr;
+      canvas.height = displayHeight * dpr;
+      canvas.style.width = `${displayWidth}px`;
+      canvas.style.height = `${displayHeight}px`;
+      ctx.scale(dpr, dpr);
+
+      ctx.fillStyle = '#111827';
+      ctx.fillRect(0, 0, displayWidth, displayHeight);
+
+      const risingCandles: Array<{
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        wickY: number;
+        wickHeight: number;
+      }> = [];
+      const fallingCandles: Array<{
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        wickY: number;
+        wickHeight: number;
+      }> = [];
+
+      chart.visibleData.forEach((candle, i) => {
+        const actualIndex = chart.domain.index.startIndex + i;
+        const pos = candleToPixels(candle, actualIndex, chart.domain, chart.range);
+
+        const isRising = candle.close > candle.open;
+        const candleData = {
+          x: pos.x + pos.candleWidth * CANDLESTICK.BODY_OFFSET_RATIO,
+          y: pos.bodyY,
+          width: pos.candleWidth * CANDLESTICK.BODY_WIDTH_RATIO,
+          height: Math.max(pos.bodyHeight, CANDLESTICK.MIN_BODY_HEIGHT),
+          wickY: pos.highY,
+          wickHeight: pos.wickHeight,
+        };
+
+        if (isRising) {
+          risingCandles.push(candleData);
+        } else {
+          fallingCandles.push(candleData);
+        }
+      });
+
+      //  상승 캔들
+      ctx.fillStyle = '#22c55e';
+      ctx.strokeStyle = '#22c55e';
+      ctx.lineWidth = CANDLESTICK.WICK_WIDTH;
+
+      risingCandles.forEach((candle) => {
+        // Wick
+        ctx.beginPath();
+        ctx.moveTo(candle.x + candle.width / 2, candle.wickY);
+        ctx.lineTo(candle.x + candle.width / 2, candle.wickY + candle.wickHeight);
+        ctx.stroke();
+
+        // Body
+        ctx.fillRect(candle.x, candle.y, candle.width, candle.height);
+      });
+
+      // 하락 캔들
+      ctx.fillStyle = '#ef4444';
+      ctx.strokeStyle = '#ef4444';
+
+      fallingCandles.forEach((candle) => {
+        // Wick
+        ctx.beginPath();
+        ctx.moveTo(candle.x + candle.width / 2, candle.wickY);
+        ctx.lineTo(candle.x + candle.width / 2, candle.wickY + candle.wickHeight);
+        ctx.stroke();
+
+        // Body
+        ctx.fillRect(candle.x, candle.y, candle.width, candle.height);
+      });
+    });
+
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, [chart.visibleData, chart.domain, chart.range, chartWidth, height]);
 
   if (data.length === 0) {
     return (
@@ -64,18 +156,15 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
   return (
     <div className="bg-black border-2 shadow-lg">
       <div className="p-4">
-        {/* Pattern Control Panel */}
-        {/* <PatternControlPanel /> */}
         <div className="flex w-full">
-          {/* Main Chart */}
           <div>
             <div
-              className={`relative overflow-hidden ${CHART_COLORS.BACKGROUND} `}
+              className={`relative overflow-hidden ${CHART_COLORS.BACKGROUND}`}
               style={{ width: chartWidth, height }}
               onWheel={chart.handleWheel}
               onMouseDown={chart.handleMouseDown}
             >
-              {/* Grid Lines - Aligned with price labels */}
+              {/* Grid Lines */}
               {gridLines.map((line) => (
                 <div
                   key={line.price}
@@ -84,31 +173,18 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
                 />
               ))}
 
-              {/* Candlesticks */}
-              {chart.visibleData.map((candle, i) => {
-                const actualIndex = chart.domain.index.startIndex + i;
-                const pos = candleToPixels(candle, actualIndex, chart.domain, chart.range);
-                return <Candlestick key={actualIndex} data={candle} {...pos} />;
-              })}
+              {/*  Canvas - Candlesticks */}
+              <canvas ref={canvasRef} className="absolute top-0 left-0" style={{ pointerEvents: 'none' }} />
 
-              {/* Pattern Overlay */}
-              {/* <PatternOverlay width={chartWidth} height={height} /> */}
-
-              {/* High/Low Lines */}
+              {/* Overlays */}
               <HighLowLines width={chartWidth} height={height} />
-
-              {/* Current Price Line */}
               <CurrentPriceLine width={chartWidth} height={height} />
-
-              {/* Crosshair */}
               <Crosshair width={chartWidth} height={height} />
             </div>
 
-            {/* Time Axis */}
             <TimeAxis width={chartWidth} />
           </div>
 
-          {/* Price Axis */}
           <PriceAxis height={height} currentPrice={currentPrice} />
         </div>
       </div>
