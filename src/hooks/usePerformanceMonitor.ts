@@ -61,7 +61,7 @@ export const usePerformanceMonitor = (componentName: string, enabled = false) =>
 
 // 리렌더링 원인 추적 Hook
 export const useWhyDidYouUpdate = (name: string, props: Record<string, any>) => {
-  const previousProps = useRef<Record<string, any>>();
+  const previousProps = useRef<Record<string, any> | undefined>(undefined);
 
   useEffect(() => {
     if (previousProps.current) {
