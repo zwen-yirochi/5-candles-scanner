@@ -31,3 +31,8 @@ export const candleToPixels = (candle: CandleData, index: number, domain: ChartD
         wickHeight: lowY - highY,
     };
 };
+
+export const pixelToIndex = (pixelX: number, domain: IndexDomain, range: ChartRange): number => {
+  const normalized = pixelX / range.width;
+  return Math.floor(domain.startIndex + normalized * (domain.endIndex - domain.startIndex));
+};

@@ -1,10 +1,12 @@
 // CandlestickChart.tsx
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { CANDLESTICK, CHART_COLORS } from '../../constants/chart.constants';
+import { useCandleHover } from '../../hooks/useCandleHover';
 import { useChart } from '../../hooks/useChart';
 import { CandleData } from '../../types/candle.types';
 import { candleToPixels } from '../../utils/domainToRange';
 import { getVisiblePriceLabels } from '../../utils/priceLabel';
+import { CandleTooltip } from './CandleTooltip';
 import { Crosshair } from './Crosshair';
 import { CurrentPriceLine } from './CurrentPriceLine';
 import { HighLowLines } from './HighLowLines';
@@ -23,7 +25,30 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
   // const { timeframeData, patterns, loading, error } = usePatternAnalysis('BTCUSDT');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
   const rafIdRef = useRef<number | null>(null);
+
+  const candleHover = useCandleHover(data, chart.domain, chart.range, chart.isDraggingRef);
+
+  const handleChartMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (chartContainerRef.current) {
+        candleHover.handleMouseMove(e, chartContainerRef.current.getBoundingClientRect());
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 개별 함수만 의존성으로 사용 (객체 전체 사용 시 불필요한 리렌더링 발생)
+    [candleHover.handleMouseMove]
+  );
+
+  const handleChartTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (chartContainerRef.current) {
+        candleHover.handleTouchStart(e, chartContainerRef.current.getBoundingClientRect());
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 개별 함수만 의존성으로 사용 (객체 전체 사용 시 불필요한 리렌더링 발생)
+    [candleHover.handleTouchStart]
+  );
 
   const currentPrice = useMemo(() => {
     return data.length > 0 ? data[data.length - 1].close : undefined;
@@ -159,10 +184,16 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
         <div className="flex w-full">
           <div>
             <div
+              ref={chartContainerRef}
               className={`relative overflow-hidden ${CHART_COLORS.BACKGROUND}`}
               style={{ width: chartWidth, height }}
               onWheel={chart.handleWheel}
               onMouseDown={chart.handleMouseDown}
+              onMouseMove={handleChartMouseMove}
+              onMouseLeave={candleHover.handleMouseLeave}
+              onTouchStart={handleChartTouchStart}
+              onTouchMove={candleHover.handleTouchMove}
+              onTouchEnd={candleHover.handleTouchEnd}
             >
               {/* Grid Lines */}
               {gridLines.map((line) => (
@@ -180,6 +211,16 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
               <HighLowLines width={chartWidth} height={height} />
               <CurrentPriceLine width={chartWidth} height={height} />
               <Crosshair width={chartWidth} height={height} />
+
+              {/* Candle Tooltip */}
+              {candleHover.hoveredCandle && (
+                <CandleTooltip
+                  candle={candleHover.hoveredCandle}
+                  prevCandle={candleHover.prevCandle}
+                  position={candleHover.tooltipPosition}
+                  visible={candleHover.isVisible}
+                />
+              )}
             </div>
 
             <TimeAxis width={chartWidth} />
