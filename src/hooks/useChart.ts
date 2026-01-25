@@ -170,7 +170,7 @@ export const useChart = (data: CandleData[], width: number, height: number) => {
     visibleData,
     handleWheel,
     handleMouseDown,
-    isDragging: isDraggingRef.current,
+    isDraggingRef,
     autoFitY,
   };
 };
