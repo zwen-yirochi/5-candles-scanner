@@ -36,7 +36,8 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
         candleHover.handleMouseMove(e, chartContainerRef.current.getBoundingClientRect());
       }
     },
-    [candleHover]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 개별 함수만 의존성으로 사용 (객체 전체 사용 시 불필요한 리렌더링 발생)
+    [candleHover.handleMouseMove]
   );
 
   const handleChartTouchStart = useCallback(
@@ -45,7 +46,8 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
         candleHover.handleTouchStart(e, chartContainerRef.current.getBoundingClientRect());
       }
     },
-    [candleHover]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 개별 함수만 의존성으로 사용 (객체 전체 사용 시 불필요한 리렌더링 발생)
+    [candleHover.handleTouchStart]
   );
 
   const currentPrice = useMemo(() => {

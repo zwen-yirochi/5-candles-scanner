@@ -1,11 +1,17 @@
-import { useCallback, useRef, useState, MutableRefObject } from 'react';
+import { MutableRefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { CandleData } from '../types/candle.types';
 import { ChartDomain } from '../types/domain.types';
 import { ChartRange } from '../types/range.types';
 import { pixelToIndex } from '../utils/domainToRange';
 
 const HOVER_DELAY = 500;
+const TOUCH_END_DELAY = 2000;
 const TOOLTIP_OFFSET = 10;
+
+const TOOLTIP_DIMENSIONS = {
+  WIDTH: 160,
+  HEIGHT: 180,
+} as const;
 
 interface TooltipPosition {
   x: number;
@@ -37,6 +43,7 @@ export const useCandleHover = (
 
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentIndexRef = useRef<number | null>(null);
 
   const clearTimers = useCallback(() => {
@@ -48,19 +55,27 @@ export const useCandleHover = (
       clearTimeout(touchTimerRef.current);
       touchTimerRef.current = null;
     }
+    if (touchEndTimerRef.current) {
+      clearTimeout(touchEndTimerRef.current);
+      touchEndTimerRef.current = null;
+    }
   }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      clearTimers();
+    };
+  }, [clearTimers]);
 
   const calculateTooltipPosition = useCallback(
     (mouseX: number, mouseY: number, chartWidth: number, chartHeight: number): TooltipPosition => {
-      const tooltipWidth = 160;
-      const tooltipHeight = 180;
-
       let x = mouseX + TOOLTIP_OFFSET;
-      let y = mouseY - tooltipHeight - TOOLTIP_OFFSET;
+      let y = mouseY - TOOLTIP_DIMENSIONS.HEIGHT - TOOLTIP_OFFSET;
 
       // 오른쪽 경계 처리
-      if (x + tooltipWidth > chartWidth) {
-        x = mouseX - tooltipWidth - TOOLTIP_OFFSET;
+      if (x + TOOLTIP_DIMENSIONS.WIDTH > chartWidth) {
+        x = mouseX - TOOLTIP_DIMENSIONS.WIDTH - TOOLTIP_OFFSET;
       }
 
       // 상단 경계 처리
@@ -69,8 +84,8 @@ export const useCandleHover = (
       }
 
       // 하단 경계 처리
-      if (y + tooltipHeight > chartHeight) {
-        y = chartHeight - tooltipHeight - TOOLTIP_OFFSET;
+      if (y + TOOLTIP_DIMENSIONS.HEIGHT > chartHeight) {
+        y = chartHeight - TOOLTIP_DIMENSIONS.HEIGHT - TOOLTIP_OFFSET;
       }
 
       return { x, y };
@@ -110,6 +125,12 @@ export const useCandleHover = (
 
       const candleIndex = pixelToIndex(mouseX, domain.index, range);
 
+      // 인덱스 범위 체크
+      if (candleIndex < 0 || candleIndex >= data.length) {
+        hideTooltip();
+        return;
+      }
+
       // 캔들 인덱스가 바뀌면 타이머 리셋
       if (candleIndex !== currentIndexRef.current) {
         clearTimers();
@@ -124,7 +145,7 @@ export const useCandleHover = (
         setTooltipPosition(calculateTooltipPosition(mouseX, mouseY, range.width, range.height));
       }
     },
-    [isDraggingRef, domain.index, range, clearTimers, showTooltip, hideTooltip, isVisible, calculateTooltipPosition]
+    [isDraggingRef, domain.index, range, data.length, clearTimers, showTooltip, hideTooltip, isVisible, calculateTooltipPosition]
   );
 
   const handleMouseLeave = useCallback(() => {
@@ -140,6 +161,12 @@ export const useCandleHover = (
       const touchY = touch.clientY - chartRect.top;
 
       const candleIndex = pixelToIndex(touchX, domain.index, range);
+
+      // 인덱스 범위 체크
+      if (candleIndex < 0 || candleIndex >= data.length) {
+        return;
+      }
+
       currentIndexRef.current = candleIndex;
 
       clearTimers();
@@ -148,7 +175,7 @@ export const useCandleHover = (
         showTooltip(candleIndex, touchX, touchY, range.width, range.height);
       }, HOVER_DELAY);
     },
-    [isDraggingRef, domain.index, range, clearTimers, showTooltip]
+    [isDraggingRef, domain.index, range, data.length, clearTimers, showTooltip]
   );
 
   const handleTouchMove = useCallback(() => {
@@ -163,9 +190,9 @@ export const useCandleHover = (
     clearTimers();
     // 툴팁이 표시된 상태에서 터치 종료 시 잠시 후 숨김
     if (isVisible) {
-      setTimeout(() => {
+      touchEndTimerRef.current = setTimeout(() => {
         hideTooltip();
-      }, 2000);
+      }, TOUCH_END_DELAY);
     }
   }, [clearTimers, isVisible, hideTooltip]);
 
