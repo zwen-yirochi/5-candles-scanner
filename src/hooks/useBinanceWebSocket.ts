@@ -41,7 +41,7 @@ export const useBinanceWebSocket = ({
       const { k } = data;
 
       // 필수 필드 검증
-      if (!k.t || !k.o || !k.h || !k.l || !k.c || !k.v) return;
+      if (k.t == null || k.o == null || k.h == null || k.l == null || k.c == null || k.v == null) return;
 
       // 데이터 변환
       const candleData: CandleData = {
@@ -132,6 +132,9 @@ export const useBinanceWebSocket = ({
         wsClientRef.current.disconnect();
         wsClientRef.current = null;
       }
+      setIsConnected(false);
+      setLatestCandle(null);
+      setError(null);
       return;
     }
 
