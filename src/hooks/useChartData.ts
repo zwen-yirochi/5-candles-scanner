@@ -1,8 +1,8 @@
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetch24hrStats, fetchBinance } from '../services/api/fetchBinance';
-import { rawDataAtom } from '../stores/atoms/dataAtoms';
 import { updateCandleAtom } from '../stores/atoms/actionAtoms';
+import { currentPriceAtom, rawDataAtom } from '../stores/atoms/dataAtoms';
 import { Binance24hrStats, CandleData, ChartStats } from '../types';
 
 import { useBinanceWebSocket } from './useBinanceWebSocket';
@@ -30,7 +30,7 @@ export const useChartData = ({
 }: UseChartDataParams): UseChartDataReturn => {
   const setRawData = useSetAtom(rawDataAtom);
   const updateCandle = useSetAtom(updateCandleAtom);
-  const rawData = useAtomValue(rawDataAtom);
+  const currentPrice = useAtomValue(currentPriceAtom);
 
   const [stats24hr, setStats24hr] = useState<Binance24hrStats | null>(null);
   const [loading, setLoading] = useState(false);
@@ -48,15 +48,14 @@ export const useChartData = ({
     if (latestCandle) updateCandle(latestCandle);
   }, [latestCandle, updateCandle]);
 
-  // Calculate statistics
+  // Calculate statistics — currentPriceAtom은 close 값이 변할 때만 갱신
   const stats: ChartStats | null = useMemo(() => {
-    if (rawData.length === 0 || !stats24hr) return null;
-    const latest = rawData[rawData.length - 1];
+    if (currentPrice === null || !stats24hr) return null;
     const priceChange = parseFloat(stats24hr.priceChange);
     const priceChangePercent = parseFloat(stats24hr.priceChangePercent);
 
     return {
-      currentPrice: latest.close,
+      currentPrice,
       priceChange,
       priceChangePercent,
       high: parseFloat(stats24hr.highPrice),
@@ -64,7 +63,7 @@ export const useChartData = ({
       volume: parseFloat(stats24hr.volume),
       isPositive: priceChange >= 0,
     };
-  }, [rawData, stats24hr]);
+  }, [currentPrice, stats24hr]);
 
   // Fetch data
   const fetchData = useCallback(async () => {

@@ -27,6 +27,7 @@ export const useBinanceWebSocket = ({
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const wsClientRef = useRef<BinanceWebSocketClient | null>(null);
+  const lastCandleRef = useRef<CandleData | null>(null);
 
   // ref 패턴: 콜백을 ref에 저장하여 effect 의존성에서 제외
   const onMessageRef = useRef<(data: BinanceKlineWebSocketData) => void>(undefined);
@@ -40,14 +41,31 @@ export const useBinanceWebSocket = ({
 
       if (k.t == null || k.o == null || k.h == null || k.l == null || k.c == null || k.v == null) return;
 
-      setLatestCandle({
+      const newCandle: CandleData = {
         timestamp: k.t,
         open: parseFloat(k.o),
         high: parseFloat(k.h),
         low: parseFloat(k.l),
         close: parseFloat(k.c),
         volume: parseFloat(k.v),
-      });
+      };
+
+      // 값이 동일하면 setState 스킵
+      const prev = lastCandleRef.current;
+      if (
+        prev &&
+        prev.timestamp === newCandle.timestamp &&
+        prev.open === newCandle.open &&
+        prev.high === newCandle.high &&
+        prev.low === newCandle.low &&
+        prev.close === newCandle.close &&
+        prev.volume === newCandle.volume
+      ) {
+        return;
+      }
+
+      lastCandleRef.current = newCandle;
+      setLatestCandle(newCandle);
     } catch (err) {
       console.error('Error processing message:', err);
       setError(err as Error);

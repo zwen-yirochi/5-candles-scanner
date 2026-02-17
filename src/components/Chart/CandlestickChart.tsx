@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { CANDLESTICK, CHART_COLORS } from '../../constants/chart.constants';
 import { useCandleHover } from '../../hooks/useCandleHover';
 import { useChart } from '../../hooks/useChart';
-import { rawDataAtom } from '../../stores/atoms/dataAtoms';
+import { currentPriceAtom, dataLengthAtom, rawDataAtom } from '../../stores/atoms/dataAtoms';
 import { candleToPixels } from '../../utils/domainToRange';
 import { getVisiblePriceLabels } from '../../utils/priceLabel';
 import { CandleTooltip } from './CandleTooltip';
@@ -21,6 +21,8 @@ export interface CandlestickChartProps {
 
 export const CandlestickChart: React.FC<CandlestickChartProps> = ({ width, height }) => {
   const chartData = useAtomValue(rawDataAtom);
+  const currentPrice = useAtomValue(currentPriceAtom);
+  const dataLength = useAtomValue(dataLengthAtom);
   const chartWidth = width - 40;
   const chart = useChart(chartWidth, height);
   // const { timeframeData, patterns, loading, error } = usePatternAnalysis('BTCUSDT');
@@ -51,9 +53,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ width, heigh
     [candleHover.handleTouchStart]
   );
 
-  const currentPrice = useMemo(() => {
-    return chartData.length > 0 ? chartData[chartData.length - 1].close : undefined;
-  }, [chartData]);
+  const currentPriceValue = currentPrice ?? undefined;
 
   const gridLines = useMemo(() => {
     const { labels } = getVisiblePriceLabels(chart.domain.price.minPrice, chart.domain.price.maxPrice, 10);
@@ -171,7 +171,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ width, heigh
     };
   }, [chart.visibleData, chart.domain, chart.range, chartWidth, height]);
 
-  if (chartData.length === 0) {
+  if (dataLength === 0) {
     return (
       <div className="flex items-center justify-center border rounded-lg h-96 bg-gray-50">
         <p className="text-gray-500">No data available</p>
@@ -227,7 +227,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ width, heigh
             <TimeAxis width={chartWidth} />
           </div>
 
-          <PriceAxis height={height} currentPrice={currentPrice} />
+          <PriceAxis height={height} currentPrice={currentPriceValue} />
         </div>
       </div>
     </div>
