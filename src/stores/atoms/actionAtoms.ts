@@ -13,7 +13,6 @@ const CONFIG = {
 } as const;
 
 type InitParams = {
-  data: CandleData[];
   width: number;
   height: number;
 };
@@ -34,11 +33,27 @@ function calculatePriceDomain(data: CandleData[]) {
   };
 }
 
-// 초기화
-export const initializeChartAtom = atom(null, (get, set, { data, width, height }: InitParams) => {
+// WebSocket 캔들을 rawDataAtom에 병합
+export const updateCandleAtom = atom(null, (get, set, candle: CandleData) => {
+  const data = get(rawDataAtom);
   if (data.length === 0) return;
 
-  set(rawDataAtom, data);
+  const last = data[data.length - 1];
+  if (last.timestamp === candle.timestamp) {
+    set(rawDataAtom, [
+      ...data.slice(0, -1),
+      { ...candle, high: Math.max(last.high, candle.high), low: Math.min(last.low, candle.low) },
+    ]);
+  } else {
+    set(rawDataAtom, [...data, candle]);
+  }
+});
+
+// 초기화
+export const initializeChartAtom = atom(null, (get, set, { width, height }: InitParams) => {
+  const data = get(rawDataAtom);
+  if (data.length === 0) return;
+
   set(chartRangeAtom, { width, height });
 
   const displayCount = Math.min(CONFIG.DEFAULT_VISIBLE_COUNT, data.length);

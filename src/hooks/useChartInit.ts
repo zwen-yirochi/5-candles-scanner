@@ -4,42 +4,39 @@ import { initializeChartAtom } from '../stores/atoms/actionAtoms';
 import { rawDataAtom, visibleDataAtom } from '../stores/atoms/dataAtoms';
 import { chartDomainAtom, indexDomainAtom } from '../stores/atoms/domainAtoms';
 import { chartRangeAtom } from '../stores/atoms/rangeAtoms';
-import { CandleData } from '../types';
 
-export const useChartInit = (data: CandleData[], width: number, height: number) => {
+export const useChartInit = (width: number, height: number) => {
+  const chartData = useAtomValue(rawDataAtom);
   const domain = useAtomValue(chartDomainAtom);
   const range = useAtomValue(chartRangeAtom);
   const visibleData = useAtomValue(visibleDataAtom);
   const setIndexDomain = useSetAtom(indexDomainAtom);
 
   const initializeChart = useSetAtom(initializeChartAtom);
-  const setRawData = useSetAtom(rawDataAtom);
 
   const isInitializedRef = useRef(false);
   const prevDataLengthRef = useRef(0);
 
   useEffect(() => {
-    if (data.length === 0) return;
+    if (chartData.length === 0) return;
 
     if (!isInitializedRef.current || range.width !== width || range.height !== height) {
-      initializeChart({ data, width, height });
+      initializeChart({ width, height });
       isInitializedRef.current = true;
-      prevDataLengthRef.current = data.length;
-    } else {
-      const dataLengthChanged = data.length !== prevDataLengthRef.current;
-      const isNewCandle = dataLengthChanged && data.length > prevDataLengthRef.current;
-      setRawData(data);
+      prevDataLengthRef.current = chartData.length;
+    } else if (chartData.length !== prevDataLengthRef.current) {
+      const isNewCandle = chartData.length > prevDataLengthRef.current;
 
       if (isNewCandle) {
-        const indexShift = data.length - prevDataLengthRef.current;
+        const indexShift = chartData.length - prevDataLengthRef.current;
         setIndexDomain((prev) => ({
           startIndex: prev.startIndex + indexShift,
           endIndex: prev.endIndex + indexShift,
         }));
       }
-      prevDataLengthRef.current = data.length;
+      prevDataLengthRef.current = chartData.length;
     }
-  }, [data, width, height, initializeChart, setRawData, setIndexDomain, range.width, range.height]);
+  }, [chartData.length, width, height, initializeChart, setIndexDomain, range.width, range.height]);
 
   return { domain, range, visibleData };
 };

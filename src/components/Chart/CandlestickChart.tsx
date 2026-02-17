@@ -1,9 +1,10 @@
 // CandlestickChart.tsx
+import { useAtomValue } from 'jotai';
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { CANDLESTICK, CHART_COLORS } from '../../constants/chart.constants';
 import { useCandleHover } from '../../hooks/useCandleHover';
 import { useChart } from '../../hooks/useChart';
-import { CandleData } from '../../types/candle.types';
+import { rawDataAtom } from '../../stores/atoms/dataAtoms';
 import { candleToPixels } from '../../utils/domainToRange';
 import { getVisiblePriceLabels } from '../../utils/priceLabel';
 import { CandleTooltip } from './CandleTooltip';
@@ -14,21 +15,21 @@ import { PriceAxis } from './PriceAxis';
 import { TimeAxis } from './TimeAxis';
 
 export interface CandlestickChartProps {
-  data: CandleData[];
   width: number;
   height: number;
 }
 
-export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width, height }) => {
+export const CandlestickChart: React.FC<CandlestickChartProps> = ({ width, height }) => {
+  const chartData = useAtomValue(rawDataAtom);
   const chartWidth = width - 40;
-  const chart = useChart(data, chartWidth, height);
+  const chart = useChart(chartWidth, height);
   // const { timeframeData, patterns, loading, error } = usePatternAnalysis('BTCUSDT');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const rafIdRef = useRef<number | null>(null);
 
-  const candleHover = useCandleHover(data, chart.domain, chart.range, chart.isDraggingRef.current);
+  const candleHover = useCandleHover(chartData, chart.domain, chart.range, chart.isDraggingRef.current);
 
   const handleChartMouseMove = useCallback(
     (e: React.MouseEvent) => {
@@ -51,8 +52,8 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
   );
 
   const currentPrice = useMemo(() => {
-    return data.length > 0 ? data[data.length - 1].close : undefined;
-  }, [data]);
+    return chartData.length > 0 ? chartData[chartData.length - 1].close : undefined;
+  }, [chartData]);
 
   const gridLines = useMemo(() => {
     const { labels } = getVisiblePriceLabels(chart.domain.price.minPrice, chart.domain.price.maxPrice, 10);
@@ -170,7 +171,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
     };
   }, [chart.visibleData, chart.domain, chart.range, chartWidth, height]);
 
-  if (data.length === 0) {
+  if (chartData.length === 0) {
     return (
       <div className="flex items-center justify-center border rounded-lg h-96 bg-gray-50">
         <p className="text-gray-500">No data available</p>
