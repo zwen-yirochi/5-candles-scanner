@@ -1,6 +1,6 @@
 import { atom } from 'jotai';
 import { CandleData } from '../../types/candle.types';
-import { rawDataAtom } from './dataAtoms';
+import { rawDataAtom, visibleDataAtom } from './dataAtoms';
 import { indexDomainAtom, priceDomainAtom } from './domainAtoms';
 import { chartRangeAtom } from './rangeAtoms';
 
@@ -55,20 +55,6 @@ export const initializeChartAtom = atom(null, (get, set, { data, width, height }
 
   const priceDomain = calculatePriceDomain(visibleData);
   if (priceDomain) set(priceDomainAtom, priceDomain);
-});
-
-export const visibleDataAtom = atom((get) => {
-  const data = get(rawDataAtom);
-  const domain = get(indexDomainAtom);
-
-  if (data.length === 0) return [];
-
-  const safeStart = Math.max(0, Math.floor(domain.startIndex));
-  const safeEnd = Math.min(data.length - 1, Math.floor(domain.endIndex));
-
-  if (safeStart > safeEnd) return [];
-
-  return data.slice(safeStart, safeEnd + 1);
 });
 
 // X축 패닝

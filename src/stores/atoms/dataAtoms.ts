@@ -9,5 +9,12 @@ export const visibleDataAtom = atom((get) => {
     const data = get(rawDataAtom);
     const { startIndex, endIndex }: IndexDomain = get(indexDomainAtom);
 
-    return data.slice(Math.floor(startIndex), Math.ceil(endIndex) + 1);
+    if (data.length === 0) return [];
+
+    const safeStart = Math.max(0, Math.floor(startIndex));
+    const safeEnd = Math.min(data.length - 1, Math.floor(endIndex));
+
+    if (safeStart > safeEnd) return [];
+
+    return data.slice(safeStart, safeEnd + 1);
 });
