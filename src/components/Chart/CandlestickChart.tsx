@@ -28,7 +28,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ data, width,
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const rafIdRef = useRef<number | null>(null);
 
-  const candleHover = useCandleHover(data, chart.domain, chart.range, chart.isDraggingRef);
+  const candleHover = useCandleHover(data, chart.domain, chart.range, chart.isDraggingRef.current);
 
   const handleChartMouseMove = useCallback(
     (e: React.MouseEvent) => {
