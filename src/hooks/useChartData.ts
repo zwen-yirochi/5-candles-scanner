@@ -115,7 +115,7 @@ export const useChartData = ({
 
   useEffect(() => {
     fetchData();
-  }, [fetchData, symbol, interval, limit]);
+  }, [fetchData]);
 
   return {
     chartData,

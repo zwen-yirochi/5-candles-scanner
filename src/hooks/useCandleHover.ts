@@ -18,6 +18,30 @@ interface TooltipPosition {
   y: number;
 }
 
+const calculateTooltipPosition = (
+  mouseX: number,
+  mouseY: number,
+  chartWidth: number,
+  chartHeight: number
+): TooltipPosition => {
+  let x = mouseX + TOOLTIP_OFFSET;
+  let y = mouseY - TOOLTIP_DIMENSIONS.HEIGHT - TOOLTIP_OFFSET;
+
+  if (x + TOOLTIP_DIMENSIONS.WIDTH > chartWidth) {
+    x = mouseX - TOOLTIP_DIMENSIONS.WIDTH - TOOLTIP_OFFSET;
+  }
+
+  if (y < 0) {
+    y = mouseY + TOOLTIP_OFFSET;
+  }
+
+  if (y + TOOLTIP_DIMENSIONS.HEIGHT > chartHeight) {
+    y = chartHeight - TOOLTIP_DIMENSIONS.HEIGHT - TOOLTIP_OFFSET;
+  }
+
+  return { x, y };
+};
+
 interface UseCandleHoverResult {
   hoveredCandle: CandleData | null;
   prevCandle: CandleData | null;
@@ -68,31 +92,6 @@ export const useCandleHover = (
     };
   }, [clearTimers]);
 
-  const calculateTooltipPosition = useCallback(
-    (mouseX: number, mouseY: number, chartWidth: number, chartHeight: number): TooltipPosition => {
-      let x = mouseX + TOOLTIP_OFFSET;
-      let y = mouseY - TOOLTIP_DIMENSIONS.HEIGHT - TOOLTIP_OFFSET;
-
-      // 오른쪽 경계 처리
-      if (x + TOOLTIP_DIMENSIONS.WIDTH > chartWidth) {
-        x = mouseX - TOOLTIP_DIMENSIONS.WIDTH - TOOLTIP_OFFSET;
-      }
-
-      // 상단 경계 처리
-      if (y < 0) {
-        y = mouseY + TOOLTIP_OFFSET;
-      }
-
-      // 하단 경계 처리
-      if (y + TOOLTIP_DIMENSIONS.HEIGHT > chartHeight) {
-        y = chartHeight - TOOLTIP_DIMENSIONS.HEIGHT - TOOLTIP_OFFSET;
-      }
-
-      return { x, y };
-    },
-    []
-  );
-
   const showTooltip = useCallback(
     (index: number, mouseX: number, mouseY: number, chartWidth: number, chartHeight: number) => {
       if (index >= 0 && index < data.length) {
@@ -102,7 +101,7 @@ export const useCandleHover = (
         setIsVisible(true);
       }
     },
-    [data, calculateTooltipPosition]
+    [data]
   );
 
   const hideTooltip = useCallback(() => {
@@ -145,7 +144,7 @@ export const useCandleHover = (
         setTooltipPosition(calculateTooltipPosition(mouseX, mouseY, range.width, range.height));
       }
     },
-    [isDragging, domain.index, range, data.length, clearTimers, showTooltip, hideTooltip, isVisible, calculateTooltipPosition]
+    [isDragging, domain.index, range, data.length, clearTimers, showTooltip, hideTooltip, isVisible]
   );
 
   const handleMouseLeave = useCallback(() => {
