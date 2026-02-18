@@ -1,4 +1,6 @@
+import { useSetAtom } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { isDraggingAtom } from '../stores/atoms/interactionAtoms';
 
 type DragDirection = 'horizontal' | 'vertical';
 
@@ -10,6 +12,7 @@ interface UseZoomDragParams {
 
 export const useZoomDrag = ({ onZoom, sensitivity = 0.01, direction }: UseZoomDragParams) => {
     const [isDragging, setIsDragging] = useState(false);
+    const setGlobalDragging = useSetAtom(isDraggingAtom);
     const dragStartRef = useRef(0);
     const isDraggingRef = useRef(false);
     const rafIdRef = useRef<number | null>(null);
@@ -26,9 +29,10 @@ export const useZoomDrag = ({ onZoom, sensitivity = 0.01, direction }: UseZoomDr
             e.preventDefault();
             isDraggingRef.current = true;
             setIsDragging(true);
+            setGlobalDragging(true);
             dragStartRef.current = direction === 'horizontal' ? e.clientX : e.clientY;
         },
-        [direction]
+        [direction, setGlobalDragging]
     );
 
     const handleMouseMove = useCallback(
@@ -54,11 +58,12 @@ export const useZoomDrag = ({ onZoom, sensitivity = 0.01, direction }: UseZoomDr
     const handleMouseUp = useCallback(() => {
         isDraggingRef.current = false;
         setIsDragging(false);
+        setGlobalDragging(false);
         if (rafIdRef.current !== null) {
             cancelAnimationFrame(rafIdRef.current);
             rafIdRef.current = null;
         }
-    }, []);
+    }, [setGlobalDragging]);
 
     useEffect(() => {
         window.addEventListener('mousemove', handleMouseMove);
