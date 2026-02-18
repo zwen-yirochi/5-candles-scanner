@@ -2,6 +2,7 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useRef } from 'react';
 import { autoFitYAtom, zoomXAtom } from '../stores/atoms/actionAtoms';
 import { indexDomainAtom, priceDomainAtom } from '../stores/atoms/domainAtoms';
+import { isDraggingAtom } from '../stores/atoms/interactionAtoms';
 import { chartRangeAtom } from '../stores/atoms/rangeAtoms';
 
 export const useChartPanZoom = () => {
@@ -10,6 +11,7 @@ export const useChartPanZoom = () => {
   const [priceDomain, setPriceDomain] = useAtom(priceDomainAtom);
   const zoomX = useSetAtom(zoomXAtom);
   const autoFitY = useSetAtom(autoFitYAtom);
+  const setIsDragging = useSetAtom(isDraggingAtom);
 
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
@@ -28,8 +30,9 @@ export const useChartPanZoom = () => {
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     isDraggingRef.current = true;
+    setIsDragging(true);
     dragStartRef.current = { x: e.clientX, y: e.clientY };
-  }, []);
+  }, [setIsDragging]);
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
@@ -86,11 +89,12 @@ export const useChartPanZoom = () => {
 
   const handleMouseUp = useCallback(() => {
     isDraggingRef.current = false;
+    setIsDragging(false);
     if (rafIdRef.current !== null) {
       cancelAnimationFrame(rafIdRef.current);
       rafIdRef.current = null;
     }
-  }, []);
+  }, [setIsDragging]);
 
   useEffect(() => {
     const handleMove = (e: MouseEvent) => handleMouseMove(e);
@@ -130,7 +134,6 @@ export const useChartPanZoom = () => {
   return {
     handleWheel,
     handleMouseDown,
-    isDraggingRef,
     autoFitY,
   };
 };

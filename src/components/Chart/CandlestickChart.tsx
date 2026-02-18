@@ -31,7 +31,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ width, heigh
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const rafIdRef = useRef<number | null>(null);
 
-  const candleHover = useCandleHover(chartData, chart.domain, chart.range, chart.isDraggingRef.current);
+  const candleHover = useCandleHover(chartData, chart.domain, chart.range);
 
   const handleChartMouseMove = useCallback(
     (e: React.MouseEvent) => {
@@ -214,14 +214,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ width, heigh
               <Crosshair width={chartWidth} height={height} />
 
               {/* Candle Tooltip */}
-              {candleHover.hoveredCandle && (
-                <CandleTooltip
-                  candle={candleHover.hoveredCandle}
-                  prevCandle={candleHover.prevCandle}
-                  position={candleHover.tooltipPosition}
-                  visible={candleHover.isVisible}
-                />
-              )}
+              <CandleTooltip />
             </div>
 
             <TimeAxis width={chartWidth} />

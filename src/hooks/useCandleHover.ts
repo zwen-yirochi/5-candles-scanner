@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useAtomValue, useSetAtom } from 'jotai';
+import { useCallback, useEffect, useRef } from 'react';
+import { hoveredCandleAtom, isDraggingAtom } from '../stores/atoms/interactionAtoms';
 import { CandleData } from '../types/candle.types';
 import { ChartDomain } from '../types/domain.types';
 import { ChartRange } from '../types/range.types';
@@ -43,10 +45,6 @@ const calculateTooltipPosition = (
 };
 
 interface UseCandleHoverResult {
-  hoveredCandle: CandleData | null;
-  prevCandle: CandleData | null;
-  tooltipPosition: TooltipPosition;
-  isVisible: boolean;
   handleMouseMove: (e: React.MouseEvent, chartRect: DOMRect) => void;
   handleMouseLeave: () => void;
   handleTouchStart: (e: React.TouchEvent, chartRect: DOMRect) => void;
@@ -57,14 +55,12 @@ interface UseCandleHoverResult {
 export const useCandleHover = (
   data: CandleData[],
   domain: ChartDomain,
-  range: ChartRange,
-  isDragging: boolean
+  range: ChartRange
 ): UseCandleHoverResult => {
-  const [hoveredCandle, setHoveredCandle] = useState<CandleData | null>(null);
-  const [prevCandle, setPrevCandle] = useState<CandleData | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({ x: 0, y: 0 });
-  const [isVisible, setIsVisible] = useState(false);
+  const isDragging = useAtomValue(isDraggingAtom);
+  const setHoveredCandle = useSetAtom(hoveredCandleAtom);
 
+  const isShowingRef = useRef(false);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -95,27 +91,34 @@ export const useCandleHover = (
   const showTooltip = useCallback(
     (index: number, mouseX: number, mouseY: number, chartWidth: number, chartHeight: number) => {
       if (index >= 0 && index < data.length) {
-        setHoveredCandle(data[index]);
-        setPrevCandle(index > 0 ? data[index - 1] : null);
-        setTooltipPosition(calculateTooltipPosition(mouseX, mouseY, chartWidth, chartHeight));
-        setIsVisible(true);
+        setHoveredCandle({
+          candle: data[index],
+          prevCandle: index > 0 ? data[index - 1] : null,
+          tooltipPosition: calculateTooltipPosition(mouseX, mouseY, chartWidth, chartHeight),
+        });
+        isShowingRef.current = true;
       }
     },
-    [data]
+    [data, setHoveredCandle]
   );
 
   const hideTooltip = useCallback(() => {
     clearTimers();
-    setIsVisible(false);
     setHoveredCandle(null);
-    setPrevCandle(null);
+    isShowingRef.current = false;
     currentIndexRef.current = null;
-  }, [clearTimers]);
+  }, [clearTimers, setHoveredCandle]);
+
+  // 드래그 시작 시 자동 숨김
+  useEffect(() => {
+    if (isDragging) {
+      hideTooltip();
+    }
+  }, [isDragging, hideTooltip]);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent, chartRect: DOMRect) => {
       if (isDragging) {
-        hideTooltip();
         return;
       }
 
@@ -133,18 +136,28 @@ export const useCandleHover = (
       // 캔들 인덱스가 바뀌면 타이머 리셋
       if (candleIndex !== currentIndexRef.current) {
         clearTimers();
-        setIsVisible(false);
+        if (isShowingRef.current) {
+          setHoveredCandle(null);
+          isShowingRef.current = false;
+        }
         currentIndexRef.current = candleIndex;
 
         hoverTimerRef.current = setTimeout(() => {
           showTooltip(candleIndex, mouseX, mouseY, range.width, range.height);
         }, HOVER_DELAY);
-      } else if (isVisible) {
+      } else if (isShowingRef.current) {
         // 같은 캔들 위에서 마우스가 움직이면 툴팁 위치만 업데이트
-        setTooltipPosition(calculateTooltipPosition(mouseX, mouseY, range.width, range.height));
+        setHoveredCandle((prev) =>
+          prev
+            ? {
+                ...prev,
+                tooltipPosition: calculateTooltipPosition(mouseX, mouseY, range.width, range.height),
+              }
+            : null
+        );
       }
     },
-    [isDragging, domain.index, range, data.length, clearTimers, showTooltip, hideTooltip, isVisible]
+    [isDragging, domain.index, range, data.length, clearTimers, showTooltip, hideTooltip, setHoveredCandle]
   );
 
   const handleMouseLeave = useCallback(() => {
@@ -180,26 +193,22 @@ export const useCandleHover = (
   const handleTouchMove = useCallback(() => {
     // 터치 이동 시 타이머 취소 (드래그로 판단)
     clearTimers();
-    if (isVisible) {
+    if (isShowingRef.current) {
       hideTooltip();
     }
-  }, [clearTimers, isVisible, hideTooltip]);
+  }, [clearTimers, hideTooltip]);
 
   const handleTouchEnd = useCallback(() => {
     clearTimers();
     // 툴팁이 표시된 상태에서 터치 종료 시 잠시 후 숨김
-    if (isVisible) {
+    if (isShowingRef.current) {
       touchEndTimerRef.current = setTimeout(() => {
         hideTooltip();
       }, TOUCH_END_DELAY);
     }
-  }, [clearTimers, isVisible, hideTooltip]);
+  }, [clearTimers, hideTooltip]);
 
   return {
-    hoveredCandle,
-    prevCandle,
-    tooltipPosition,
-    isVisible,
     handleMouseMove,
     handleMouseLeave,
     handleTouchStart,

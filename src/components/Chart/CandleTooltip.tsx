@@ -1,12 +1,6 @@
+import { useAtomValue } from 'jotai';
 import React from 'react';
-import { CandleData } from '../../types/candle.types';
-
-interface CandleTooltipProps {
-  candle: CandleData;
-  prevCandle: CandleData | null;
-  position: { x: number; y: number };
-  visible: boolean;
-}
+import { hoveredCandleAtom, tooltipVisibleAtom } from '../../stores/atoms/interactionAtoms';
 
 const formatNumber = (value: number, decimals: number = 2): string => {
   return value.toLocaleString('en-US', {
@@ -24,8 +18,13 @@ const formatTimestamp = (timestamp: number): string => {
   return `${month}/${day} ${hours}:${minutes}`;
 };
 
-export const CandleTooltip: React.FC<CandleTooltipProps> = ({ candle, prevCandle, position, visible }) => {
-  if (!visible) return null;
+export const CandleTooltip: React.FC = () => {
+  const hoveredCandleState = useAtomValue(hoveredCandleAtom);
+  const visible = useAtomValue(tooltipVisibleAtom);
+
+  if (!visible || !hoveredCandleState) return null;
+
+  const { candle, prevCandle, tooltipPosition: position } = hoveredCandleState;
 
   const changePercent = prevCandle ? ((candle.close - prevCandle.close) / prevCandle.close) * 100 : null;
 
