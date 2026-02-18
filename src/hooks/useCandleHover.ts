@@ -1,4 +1,4 @@
-import { MutableRefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CandleData } from '../types/candle.types';
 import { ChartDomain } from '../types/domain.types';
 import { ChartRange } from '../types/range.types';
@@ -18,6 +18,30 @@ interface TooltipPosition {
   y: number;
 }
 
+const calculateTooltipPosition = (
+  mouseX: number,
+  mouseY: number,
+  chartWidth: number,
+  chartHeight: number
+): TooltipPosition => {
+  let x = mouseX + TOOLTIP_OFFSET;
+  let y = mouseY - TOOLTIP_DIMENSIONS.HEIGHT - TOOLTIP_OFFSET;
+
+  if (x + TOOLTIP_DIMENSIONS.WIDTH > chartWidth) {
+    x = mouseX - TOOLTIP_DIMENSIONS.WIDTH - TOOLTIP_OFFSET;
+  }
+
+  if (y < 0) {
+    y = mouseY + TOOLTIP_OFFSET;
+  }
+
+  if (y + TOOLTIP_DIMENSIONS.HEIGHT > chartHeight) {
+    y = chartHeight - TOOLTIP_DIMENSIONS.HEIGHT - TOOLTIP_OFFSET;
+  }
+
+  return { x, y };
+};
+
 interface UseCandleHoverResult {
   hoveredCandle: CandleData | null;
   prevCandle: CandleData | null;
@@ -34,7 +58,7 @@ export const useCandleHover = (
   data: CandleData[],
   domain: ChartDomain,
   range: ChartRange,
-  isDraggingRef: MutableRefObject<boolean>
+  isDragging: boolean
 ): UseCandleHoverResult => {
   const [hoveredCandle, setHoveredCandle] = useState<CandleData | null>(null);
   const [prevCandle, setPrevCandle] = useState<CandleData | null>(null);
@@ -68,31 +92,6 @@ export const useCandleHover = (
     };
   }, [clearTimers]);
 
-  const calculateTooltipPosition = useCallback(
-    (mouseX: number, mouseY: number, chartWidth: number, chartHeight: number): TooltipPosition => {
-      let x = mouseX + TOOLTIP_OFFSET;
-      let y = mouseY - TOOLTIP_DIMENSIONS.HEIGHT - TOOLTIP_OFFSET;
-
-      // 오른쪽 경계 처리
-      if (x + TOOLTIP_DIMENSIONS.WIDTH > chartWidth) {
-        x = mouseX - TOOLTIP_DIMENSIONS.WIDTH - TOOLTIP_OFFSET;
-      }
-
-      // 상단 경계 처리
-      if (y < 0) {
-        y = mouseY + TOOLTIP_OFFSET;
-      }
-
-      // 하단 경계 처리
-      if (y + TOOLTIP_DIMENSIONS.HEIGHT > chartHeight) {
-        y = chartHeight - TOOLTIP_DIMENSIONS.HEIGHT - TOOLTIP_OFFSET;
-      }
-
-      return { x, y };
-    },
-    []
-  );
-
   const showTooltip = useCallback(
     (index: number, mouseX: number, mouseY: number, chartWidth: number, chartHeight: number) => {
       if (index >= 0 && index < data.length) {
@@ -102,7 +101,7 @@ export const useCandleHover = (
         setIsVisible(true);
       }
     },
-    [data, calculateTooltipPosition]
+    [data]
   );
 
   const hideTooltip = useCallback(() => {
@@ -115,7 +114,7 @@ export const useCandleHover = (
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent, chartRect: DOMRect) => {
-      if (isDraggingRef.current) {
+      if (isDragging) {
         hideTooltip();
         return;
       }
@@ -145,7 +144,7 @@ export const useCandleHover = (
         setTooltipPosition(calculateTooltipPosition(mouseX, mouseY, range.width, range.height));
       }
     },
-    [isDraggingRef, domain.index, range, data.length, clearTimers, showTooltip, hideTooltip, isVisible, calculateTooltipPosition]
+    [isDragging, domain.index, range, data.length, clearTimers, showTooltip, hideTooltip, isVisible]
   );
 
   const handleMouseLeave = useCallback(() => {
@@ -154,7 +153,7 @@ export const useCandleHover = (
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent, chartRect: DOMRect) => {
-      if (isDraggingRef.current) return;
+      if (isDragging) return;
 
       const touch = e.touches[0];
       const touchX = touch.clientX - chartRect.left;
@@ -175,7 +174,7 @@ export const useCandleHover = (
         showTooltip(candleIndex, touchX, touchY, range.width, range.height);
       }, HOVER_DELAY);
     },
-    [isDraggingRef, domain.index, range, data.length, clearTimers, showTooltip]
+    [isDragging, domain.index, range, data.length, clearTimers, showTooltip]
   );
 
   const handleTouchMove = useCallback(() => {

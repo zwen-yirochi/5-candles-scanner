@@ -1,6 +1,6 @@
 import { useAtomValue } from 'jotai';
-import React, { useMemo } from 'react';
-import { rawDataAtom } from '../../stores/atoms/dataAtoms';
+import React from 'react';
+import { currentPriceAtom, prevPriceAtom } from '../../stores/atoms/dataAtoms';
 import { priceDomainAtom } from '../../stores/atoms/domainAtoms';
 
 interface CurrentPriceLineProps {
@@ -9,12 +9,9 @@ interface CurrentPriceLineProps {
 }
 
 export const CurrentPriceLine: React.FC<CurrentPriceLineProps> = ({ width, height }) => {
-  const rawData = useAtomValue(rawDataAtom);
+  const currentPrice = useAtomValue(currentPriceAtom);
+  const prevPrice = useAtomValue(prevPriceAtom);
   const priceDomain = useAtomValue(priceDomainAtom);
-  const currentPrice = useMemo(() => {
-    if (rawData.length === 0) return null;
-    return rawData[rawData.length - 1].close;
-  }, [rawData]);
 
   if (!currentPrice) return null;
   const priceToPixel = (price: number): number => {
@@ -24,7 +21,7 @@ export const CurrentPriceLine: React.FC<CurrentPriceLineProps> = ({ width, heigh
 
   const y = priceToPixel(currentPrice);
 
-  const isUp = rawData.length > 1 ? currentPrice >= rawData[rawData.length - 2].close : true;
+  const isUp = prevPrice !== null ? currentPrice >= prevPrice : true;
   const lineColor = isUp ? 'bg-green-500' : 'bg-red-500';
 
   return (

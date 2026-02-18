@@ -27,24 +27,21 @@ export const useBinanceWebSocket = ({
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const wsClientRef = useRef<BinanceWebSocketClient | null>(null);
+  const lastCandleRef = useRef<CandleData | null>(null);
 
-  /**
-   * 웹소켓 메시지 처리
-   */
-  const handleMessage = useCallback((data: BinanceKlineWebSocketData) => {
+  // ref 패턴: 콜백을 ref에 저장하여 effect 의존성에서 제외
+  const onMessageRef = useRef<(data: BinanceKlineWebSocketData) => void>(undefined);
+  onMessageRef.current = (data) => {
     try {
-      // 메시지 타입 검증
       if (!data || typeof data !== 'object') return;
       if (data.e === 'ping' || data.e === 'pong') return;
       if (data.e !== 'kline' || !data.k) return;
 
       const { k } = data;
 
-      // 필수 필드 검증
-      if (!k.t || !k.o || !k.h || !k.l || !k.c || !k.v) return;
+      if (k.t == null || k.o == null || k.h == null || k.l == null || k.c == null || k.v == null) return;
 
-      // 데이터 변환
-      const candleData: CandleData = {
+      const newCandle: CandleData = {
         timestamp: k.t,
         open: parseFloat(k.o),
         high: parseFloat(k.h),
@@ -53,40 +50,34 @@ export const useBinanceWebSocket = ({
         volume: parseFloat(k.v),
       };
 
-      setLatestCandle(candleData);
-      setIsConnected(true);
-      setError(null);
+      // 값이 동일하면 setState 스킵
+      const prev = lastCandleRef.current;
+      if (
+        prev &&
+        prev.timestamp === newCandle.timestamp &&
+        prev.open === newCandle.open &&
+        prev.high === newCandle.high &&
+        prev.low === newCandle.low &&
+        prev.close === newCandle.close &&
+        prev.volume === newCandle.volume
+      ) {
+        return;
+      }
+
+      lastCandleRef.current = newCandle;
+      setLatestCandle(newCandle);
     } catch (err) {
       console.error('Error processing message:', err);
       setError(err as Error);
     }
-  }, []);
+  };
 
-  /**
-   * 웹소켓 에러 처리
-   */
-  const handleError = useCallback((err: Error) => {
+  const onErrorRef = useRef<(err: Error) => void>(undefined);
+  onErrorRef.current = (err) => {
     console.error('WebSocket error:', err);
     setError(err);
     setIsConnected(false);
-  }, []);
-
-  /**
-   * 웹소켓 연결 처리
-   */
-  const handleConnect = useCallback(() => {
-    console.log('WebSocket connected');
-    setIsConnected(true);
-    setError(null);
-  }, []);
-
-  /**
-   * 웹소켓 연결 해제 처리
-   */
-  const handleDisconnect = useCallback(() => {
-    console.log('WebSocket disconnected');
-    setIsConnected(false);
-  }, []);
+  };
 
   /**
    * 수동 재연결
@@ -125,6 +116,7 @@ export const useBinanceWebSocket = ({
 
   /**
    * 웹소켓 클라이언트 초기화 및 연결 관리
+   * 의존성: symbol, interval, enabled만 — 콜백은 ref로 참조
    */
   useEffect(() => {
     if (!enabled) {
@@ -132,30 +124,37 @@ export const useBinanceWebSocket = ({
         wsClientRef.current.disconnect();
         wsClientRef.current = null;
       }
+      setIsConnected(false);
+      setLatestCandle(null);
+      setError(null);
       return;
     }
 
-    // 웹소켓 클라이언트 생성
     wsClientRef.current = new BinanceWebSocketClient({
       symbol,
       interval,
-      onMessage: handleMessage,
-      onError: handleError,
-      onConnect: handleConnect,
-      onDisconnect: handleDisconnect,
+      onMessage: (data) => onMessageRef.current?.(data),
+      onError: (err) => onErrorRef.current?.(err),
+      onConnect: () => {
+        console.log('WebSocket connected');
+        setIsConnected(true);
+        setError(null);
+      },
+      onDisconnect: () => {
+        console.log('WebSocket disconnected');
+        setIsConnected(false);
+      },
     });
 
-    // 연결 시작
     wsClientRef.current.connect();
 
-    // 클린업: 컴포넌트 언마운트 시 연결 해제
     return () => {
       if (wsClientRef.current) {
         wsClientRef.current.disconnect();
         wsClientRef.current = null;
       }
     };
-  }, [symbol, interval, enabled, handleMessage, handleError, handleConnect, handleDisconnect]);
+  }, [symbol, interval, enabled]);
 
   return {
     latestCandle,

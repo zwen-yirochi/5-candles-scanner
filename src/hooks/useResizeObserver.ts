@@ -31,6 +31,8 @@ export const useResizeObserver = () => {
     });
 
     resizeObserver.observe(observeTarget);
+
+    return () => resizeObserver.disconnect();
   }, []);
 
   return { ref, ...size };

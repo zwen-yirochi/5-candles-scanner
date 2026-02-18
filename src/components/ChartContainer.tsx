@@ -1,7 +1,9 @@
+import { useAtomValue } from 'jotai';
 import { useMemo, useState } from 'react';
 import { CHART_DIMENSIONS, DEFAULT_INTERVAL, DEFAULT_LIMIT, DEFAULT_SYMBOL } from '../constants/chart.constants';
 import { useChartData } from '../hooks/useChartData';
 import { useResizeObserver } from '../hooks/useResizeObserver';
+import { dataLengthAtom } from '../stores/atoms/dataAtoms';
 import { CandlestickChart } from './Chart/CandlestickChart';
 import { ChartHeader } from './Chart/ChartHeader';
 import { ErrorMessage, LoadingSpinner } from './common';
@@ -10,11 +12,12 @@ const ChartContainer = () => {
   const [symbol, setSymbol] = useState(DEFAULT_SYMBOL);
   const [interval, setInterval] = useState(DEFAULT_INTERVAL);
   const { ref, width: containerWidth, height: containerHeight } = useResizeObserver();
-  const { chartData, stats, loading, error, refetch, isWebSocketConnected } = useChartData({
+  const { stats, loading, error, refetch, isWebSocketConnected } = useChartData({
     symbol,
     interval,
     limit: DEFAULT_LIMIT,
   });
+  const dataLength = useAtomValue(dataLengthAtom);
 
   // 축과 패딩을 고려한 실제 차트 크기 계산
   const chartDimensions = useMemo(() => {
@@ -24,11 +27,11 @@ const ChartContainer = () => {
     return { width, height };
   }, [containerWidth, containerHeight]);
 
-  if (loading && chartData.length === 0) {
+  if (loading && dataLength === 0) {
     return <LoadingSpinner message="데이터 로딩 중..." />;
   }
 
-  if (error && chartData.length === 0) {
+  if (error && dataLength === 0) {
     return <ErrorMessage message={error} onRetry={refetch} />;
   }
 
@@ -46,8 +49,8 @@ const ChartContainer = () => {
       )}
 
       <div ref={ref} className="w-full h-[calc(80vh-120px)] p-4">
-        {chartData.length > 0 && chartDimensions.width > 0 && chartDimensions.height > 0 ? (
-          <CandlestickChart data={chartData} width={chartDimensions.width} height={chartDimensions.height} />
+        {dataLength > 0 && chartDimensions.width > 0 && chartDimensions.height > 0 ? (
+          <CandlestickChart width={chartDimensions.width} height={chartDimensions.height} />
         ) : (
           <div className="flex items-center justify-center h-full bg-gray-800 border border-gray-700 rounded-lg">
             <p className="text-gray-500">차트 데이터를 불러오는 중...</p>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type DragDirection = 'horizontal' | 'vertical';
 
@@ -10,49 +10,68 @@ interface UseZoomDragParams {
 
 export const useZoomDrag = ({ onZoom, sensitivity = 0.01, direction }: UseZoomDragParams) => {
     const [isDragging, setIsDragging] = useState(false);
-    const [dragStart, setDragStart] = useState(0);
+    const dragStartRef = useRef(0);
+    const isDraggingRef = useRef(false);
+    const rafIdRef = useRef<number | null>(null);
 
-    // 드래그 시작
+    // ref 패턴: onZoom이 바뀌어도 리스너 재등록 불필요
+    const onZoomRef = useRef(onZoom);
+    onZoomRef.current = onZoom;
+
+    const sensitivityRef = useRef(sensitivity);
+    sensitivityRef.current = sensitivity;
+
     const handleMouseDown = useCallback(
         (e: React.MouseEvent) => {
             e.preventDefault();
+            isDraggingRef.current = true;
             setIsDragging(true);
-            setDragStart(direction === 'horizontal' ? e.clientX : e.clientY);
+            dragStartRef.current = direction === 'horizontal' ? e.clientX : e.clientY;
         },
         [direction]
     );
 
-    // 드래그 중
     const handleMouseMove = useCallback(
         (e: MouseEvent) => {
-            if (!isDragging) return;
+            if (!isDraggingRef.current) return;
 
-            const currentPos = direction === 'horizontal' ? e.clientX : e.clientY;
-            const delta = currentPos - dragStart;
-            const zoomFactor = 1 + delta * sensitivity;
+            if (rafIdRef.current !== null) return;
 
-            onZoom(zoomFactor);
-            setDragStart(currentPos);
+            rafIdRef.current = requestAnimationFrame(() => {
+                rafIdRef.current = null;
+
+                const currentPos = direction === 'horizontal' ? e.clientX : e.clientY;
+                const delta = currentPos - dragStartRef.current;
+                const zoomFactor = 1 + delta * sensitivityRef.current;
+
+                onZoomRef.current(zoomFactor);
+                dragStartRef.current = currentPos;
+            });
         },
-        [isDragging, dragStart, direction, sensitivity, onZoom]
+        [direction]
     );
 
-    // 드래그 종료
     const handleMouseUp = useCallback(() => {
+        isDraggingRef.current = false;
         setIsDragging(false);
+        if (rafIdRef.current !== null) {
+            cancelAnimationFrame(rafIdRef.current);
+            rafIdRef.current = null;
+        }
     }, []);
 
-    // 이벤트 리스너
     useEffect(() => {
-        if (isDragging) {
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
-            return () => {
-                window.removeEventListener('mousemove', handleMouseMove);
-                window.removeEventListener('mouseup', handleMouseUp);
-            };
-        }
-    }, [isDragging, handleMouseMove, handleMouseUp]);
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+            if (rafIdRef.current !== null) {
+                cancelAnimationFrame(rafIdRef.current);
+            }
+        };
+    }, [handleMouseMove, handleMouseUp]);
 
     return {
         isDragging,

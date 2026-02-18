@@ -2,7 +2,7 @@ import { useAtom, useAtomValue } from 'jotai';
 import React, { useMemo } from 'react';
 import { AXIS, CHART_DIMENSIONS } from '../../constants/chart.constants';
 import { useZoomDrag } from '../../hooks/useZoomDrag';
-import { rawDataAtom, visibleDataAtom } from '../../stores/atoms/dataAtoms';
+import { prevPriceAtom, visibleDataAtom } from '../../stores/atoms/dataAtoms';
 import { priceDomainAtom } from '../../stores/atoms/domainAtoms';
 import { formatPrice, getVisiblePriceLabels } from '../../utils/priceLabel';
 
@@ -15,7 +15,7 @@ export interface PriceAxisProps {
 export const PriceAxis: React.FC<PriceAxisProps> = ({ height, width = CHART_DIMENSIONS.AXIS_WIDTH, currentPrice }) => {
   const [priceDomain, setPriceDomain] = useAtom(priceDomainAtom);
   const visibleData = useAtomValue(visibleDataAtom);
-  const rawData = useAtomValue(rawDataAtom);
+  const prevPrice = useAtomValue(prevPriceAtom);
   // Get visible price labels
   const { labels: visibleLabels, step } = useMemo(() => {
     return getVisiblePriceLabels(priceDomain.minPrice, priceDomain.maxPrice, 10);
@@ -34,20 +34,18 @@ export const PriceAxis: React.FC<PriceAxisProps> = ({ height, width = CHART_DIME
   }, [visibleLabels, priceDomain, height, step]);
 
   const currentPriceData = useMemo(() => {
-    if (!currentPrice || rawData.length === 0) return null;
+    if (!currentPrice) return null;
     const priceRange = priceDomain.maxPrice - priceDomain.minPrice;
     const y = height - ((currentPrice - priceDomain.minPrice) / priceRange) * height;
 
-    // Check if price is rising or falling (항상 전체 데이터의 최신 2개 캔들로 비교)
-    const prevPrice = rawData.length > 1 ? rawData[rawData.length - 2].close : currentPrice;
-    const isRising = currentPrice >= prevPrice;
+    const isRising = currentPrice >= (prevPrice ?? currentPrice);
     return {
       price: currentPrice,
       y,
       isRising,
       label: formatPrice(currentPrice, step),
     };
-  }, [currentPrice, priceDomain, height, step, rawData]);
+  }, [currentPrice, prevPrice, priceDomain, height, step]);
 
   const handleZoom = (factor: number) => {
     const center = (priceDomain.minPrice + priceDomain.maxPrice) / 2;
