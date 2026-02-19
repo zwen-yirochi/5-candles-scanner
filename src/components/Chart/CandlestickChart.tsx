@@ -5,6 +5,7 @@ import { CANDLESTICK, CHART_COLORS } from '../../constants/chart.constants';
 import { useCandleHover } from '../../hooks/useCandleHover';
 import { useChart } from '../../hooks/useChart';
 import { useChartData } from '../../hooks/useChartData';
+import { chartDimensionsAtom } from '../../stores/atoms/chartConfigAtoms';
 import { currentPriceAtom, rawDataAtom } from '../../stores/atoms/dataAtoms';
 import { candleToPixels } from '../../utils/domainToRange';
 import { getVisiblePriceLabels } from '../../utils/priceLabel';
@@ -15,13 +16,9 @@ import { HighLowLines } from './HighLowLines';
 import { PriceAxis } from './PriceAxis';
 import { TimeAxis } from './TimeAxis';
 
-export interface CandlestickChartProps {
-  width: number;
-  height: number;
-}
-
-export const CandlestickChart: React.FC<CandlestickChartProps> = ({ width, height }) => {
+export const CandlestickChart: React.FC = () => {
   const { loading, error } = useChartData();
+  const { width, height } = useAtomValue(chartDimensionsAtom);
   const chartData = useAtomValue(rawDataAtom);
   const currentPrice = useAtomValue(currentPriceAtom);
   const chartWidth = width - 40;
@@ -173,7 +170,7 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ width, heigh
   }, [chart.visibleData, chart.domain, chart.range, chartWidth, height]);
 
   if (error) throw new Error(error);
-  if (loading || chartData.length === 0) return null;
+  if (loading || chartData.length === 0 || width === 0 || height === 0) return null;
 
   return (
     <div className="bg-black border-2 shadow-lg">

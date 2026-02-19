@@ -1,39 +1,26 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-
-interface Size {
-  width: number;
-  height: number;
-}
+import { useSetAtom } from 'jotai';
+import { useLayoutEffect, useRef } from 'react';
+import { containerSizeAtom } from '../stores/atoms/chartConfigAtoms';
 
 export const useResizeObserver = () => {
   const ref = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState<Size>({ width: 0, height: 0 });
+  const setContainerSize = useSetAtom(containerSizeAtom);
 
   useLayoutEffect(() => {
-    if (!ref.current) return;
-    const { width, height } = ref.current.getBoundingClientRect();
-
-    if (width > 0 && height > 0) {
-      setSize({ width, height });
-    }
-  }, []);
-
-  useEffect(() => {
     if (!ref.current) return;
     const observeTarget = ref.current;
     const resizeObserver = new ResizeObserver((entries) => {
       if (!entries || entries.length === 0) return;
-      const entry = entries[0];
-      const { width, height } = entry.contentRect;
+      const { width, height } = entries[0].contentRect;
       if (width > 0 && height > 0) {
-        setSize({ width, height });
+        setContainerSize({ width, height });
       }
     });
 
     resizeObserver.observe(observeTarget);
 
     return () => resizeObserver.disconnect();
-  }, []);
+  }, [setContainerSize]);
 
-  return { ref, ...size };
+  return ref;
 };
