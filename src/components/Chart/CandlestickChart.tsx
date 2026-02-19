@@ -11,7 +11,6 @@ import { ChartArea } from './ChartArea';
 import { Crosshair } from './Crosshair';
 import { CurrentPriceLine } from './CurrentPriceLine';
 import { HighLowLines } from './HighLowLines';
-import { PatternControlPanel } from './PatternControlPanel';
 import { PriceAxis } from './PriceAxis';
 import { TimeAxis } from './TimeAxis';
 
@@ -28,10 +27,6 @@ export const CandlestickChart: React.FC = () => {
 
   return (
     <div className="w-full p-4">
-      <div className="mb-2">
-        <PatternControlPanel />
-      </div>
-
       <div className="flex">
         <div>
           <ChartErrorBoundary>
