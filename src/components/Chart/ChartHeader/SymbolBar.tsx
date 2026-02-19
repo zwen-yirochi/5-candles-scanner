@@ -1,7 +1,8 @@
 import { useAtom, useAtomValue } from 'jotai';
 import React from 'react';
 import { CHART_SYMBOLS } from '../../../constants/chart.constants';
-import { symbolAtom, wsConnectedAtom } from '../../../stores/atoms/chartConfigAtoms';
+import { symbolAtom } from '../../../stores/atoms/chartConfigAtoms';
+import { wsConnectedAtom } from '../../../stores/atoms/dataAtoms';
 import { Select } from '../../common';
 
 interface SymbolBarProps {

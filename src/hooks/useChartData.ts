@@ -3,8 +3,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { DEFAULT_LIMIT } from '../constants/chart.constants';
 import { fetch24hrStats, fetchBinance } from '../services/api/fetchBinance';
 import { updateCandleAtom } from '../stores/atoms/actionAtoms';
-import { intervalAtom, stats24hrAtom, symbolAtom, wsConnectedAtom } from '../stores/atoms/chartConfigAtoms';
-import { rawDataAtom } from '../stores/atoms/dataAtoms';
+import { intervalAtom, symbolAtom } from '../stores/atoms/chartConfigAtoms';
+import { rawDataAtom, stats24hrAtom, wsConnectedAtom } from '../stores/atoms/dataAtoms';
 import { CandleData } from '../types';
 
 import { useBinanceWebSocket } from './useBinanceWebSocket';

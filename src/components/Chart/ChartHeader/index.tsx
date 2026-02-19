@@ -1,6 +1,6 @@
 import { useAtomValue } from 'jotai';
 import React from 'react';
-import { chartStatsAtom } from '../../../stores/atoms/chartConfigAtoms';
+import { chartStatsAtom } from '../../../stores/atoms/dataAtoms';
 import { IntervalBar } from './IntervalBar';
 import { PriceInfo } from './PriceInfo';
 import { SymbolBar } from './SymbolBar';
