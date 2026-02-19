@@ -1,14 +1,17 @@
-// CandlestickChart.tsx
+import { useAtomValue } from 'jotai';
 import React from 'react';
 import { useCandleCanvas } from '../../hooks/useCandleCanvas';
 import { useChartData } from '../../hooks/useChartData';
 import { useChartInit } from '../../hooks/useChartInit';
+import { usePatternAnalysis } from '../../hooks/usePatternAnalysis';
+import { symbolAtom } from '../../stores/atoms/chartConfigAtoms';
 import { ChartErrorBoundary } from '../common';
 import { CandleTooltip } from './CandleTooltip';
 import { ChartArea } from './ChartArea';
 import { Crosshair } from './Crosshair';
 import { CurrentPriceLine } from './CurrentPriceLine';
 import { HighLowLines } from './HighLowLines';
+import { PatternControlPanel } from './PatternControlPanel';
 import { PriceAxis } from './PriceAxis';
 import { TimeAxis } from './TimeAxis';
 
@@ -17,26 +20,35 @@ export const CandlestickChart: React.FC = () => {
   useChartInit();
   const canvasRef = useCandleCanvas();
 
+  const symbol = useAtomValue(symbolAtom);
+  usePatternAnalysis(symbol);
+
   if (error) throw new Error(error);
   if (loading) return null;
 
   return (
-    <div className="flex w-full p-4">
-      <div>
-        <ChartErrorBoundary>
-          <ChartArea>
-            <canvas ref={canvasRef} className="absolute top-0 left-0" style={{ pointerEvents: 'none' }} />
-            <HighLowLines />
-            <CurrentPriceLine />
-            <Crosshair />
-            <CandleTooltip />
-          </ChartArea>
-        </ChartErrorBoundary>
-
-        <TimeAxis />
+    <div className="w-full p-4">
+      <div className="mb-2">
+        <PatternControlPanel />
       </div>
 
-      <PriceAxis />
+      <div className="flex">
+        <div>
+          <ChartErrorBoundary>
+            <ChartArea>
+              <canvas ref={canvasRef} className="absolute top-0 left-0" style={{ pointerEvents: 'none' }} />
+              <HighLowLines />
+              <CurrentPriceLine />
+              <Crosshair />
+              <CandleTooltip />
+            </ChartArea>
+          </ChartErrorBoundary>
+
+          <TimeAxis />
+        </div>
+
+        <PriceAxis />
+      </div>
     </div>
   );
 };

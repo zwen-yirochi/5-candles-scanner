@@ -64,7 +64,7 @@ export const HighLowLines: React.FC = () => {
       {/* 최고가 L자 라인 */}
       <div className="absolute pointer-events-none" style={{ left: `${highX}px`, top: `${highY}px` }}>
         <div
-          className="absolute h-px bg-gray-300"
+          className="absolute h-px bg-gray-500"
           style={{
             width: `${lineLength}px`,
             top: '0',
@@ -84,7 +84,7 @@ export const HighLowLines: React.FC = () => {
       {/* 최저가 L자 라인 */}
       <div className="absolute pointer-events-none" style={{ left: `${lowX}px`, top: `${lowY}px` }}>
         <div
-          className="absolute h-px bg-gray-300"
+          className="absolute h-px bg-gray-500"
           style={{
             width: `${lineLength}px`,
             top: '0',
