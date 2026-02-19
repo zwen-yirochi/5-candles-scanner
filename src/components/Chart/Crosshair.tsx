@@ -1,8 +1,7 @@
-import { useAtom, useAtomValue } from 'jotai';
-import React, { useCallback } from 'react';
+import { useAtomValue } from 'jotai';
+import React, { useCallback, useState } from 'react';
 import { visibleDataAtom } from '../../stores/atoms/dataAtoms';
 import { indexDomainAtom, priceDomainAtom } from '../../stores/atoms/domainAtoms';
-import { crosshairPositionAtom } from '../../stores/atoms/interactionAtoms';
 
 interface CrosshairProps {
   width: number;
@@ -10,7 +9,7 @@ interface CrosshairProps {
 }
 
 export const Crosshair: React.FC<CrosshairProps> = ({ width, height }) => {
-  const [mousePos, setMousePos] = useAtom(crosshairPositionAtom);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const visibleData = useAtomValue(visibleDataAtom);
   const indexDomain = useAtomValue(indexDomainAtom);
   const priceDomain = useAtomValue(priceDomainAtom);

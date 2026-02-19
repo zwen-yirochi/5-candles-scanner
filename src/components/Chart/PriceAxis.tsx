@@ -2,17 +2,17 @@ import { useAtom, useAtomValue } from 'jotai';
 import React, { useMemo } from 'react';
 import { AXIS, CHART_DIMENSIONS } from '../../constants/chart.constants';
 import { useZoomDrag } from '../../hooks/useZoomDrag';
-import { prevPriceAtom, visibleDataAtom } from '../../stores/atoms/dataAtoms';
+import { currentPriceAtom, prevPriceAtom, visibleDataAtom } from '../../stores/atoms/dataAtoms';
 import { priceDomainAtom } from '../../stores/atoms/domainAtoms';
 import { formatPrice, getVisiblePriceLabels } from '../../utils/priceLabel';
 
 export interface PriceAxisProps {
   height: number;
   width?: number;
-  currentPrice?: number;
 }
 
-export const PriceAxis: React.FC<PriceAxisProps> = ({ height, width = CHART_DIMENSIONS.AXIS_WIDTH, currentPrice }) => {
+export const PriceAxis: React.FC<PriceAxisProps> = ({ height, width = CHART_DIMENSIONS.AXIS_WIDTH }) => {
+  const currentPrice = useAtomValue(currentPriceAtom);
   const [priceDomain, setPriceDomain] = useAtom(priceDomainAtom);
   const visibleData = useAtomValue(visibleDataAtom);
   const prevPrice = useAtomValue(prevPriceAtom);
