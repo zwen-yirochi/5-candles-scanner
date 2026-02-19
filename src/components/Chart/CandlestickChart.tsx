@@ -1,11 +1,8 @@
 // CandlestickChart.tsx
-import { useAtomValue } from 'jotai';
 import React from 'react';
 import { useCandleCanvas } from '../../hooks/useCandleCanvas';
 import { useChartData } from '../../hooks/useChartData';
 import { useChartInit } from '../../hooks/useChartInit';
-import { chartDimensionsAtom } from '../../stores/atoms/chartConfigAtoms';
-import { rawDataAtom } from '../../stores/atoms/dataAtoms';
 import { ChartErrorBoundary } from '../common';
 import { CandleTooltip } from './CandleTooltip';
 import { ChartArea } from './ChartArea';
@@ -17,14 +14,11 @@ import { TimeAxis } from './TimeAxis';
 
 export const CandlestickChart: React.FC = () => {
   const { loading, error } = useChartData();
-  const { width, height } = useAtomValue(chartDimensionsAtom);
-  const chartData = useAtomValue(rawDataAtom);
-  useChartInit(width, height);
-
+  useChartInit();
   const canvasRef = useCandleCanvas();
 
   if (error) throw new Error(error);
-  if (loading || chartData.length === 0 || width === 0 || height === 0) return null;
+  if (loading) return null;
 
   return (
     <div className="flex w-full p-4">
@@ -32,17 +26,17 @@ export const CandlestickChart: React.FC = () => {
         <ChartErrorBoundary>
           <ChartArea>
             <canvas ref={canvasRef} className="absolute top-0 left-0" style={{ pointerEvents: 'none' }} />
-            <HighLowLines width={width} height={height} />
-            <CurrentPriceLine width={width} height={height} />
-            <Crosshair width={width} height={height} />
+            <HighLowLines />
+            <CurrentPriceLine />
+            <Crosshair />
             <CandleTooltip />
           </ChartArea>
         </ChartErrorBoundary>
 
-        <TimeAxis width={width} />
+        <TimeAxis />
       </div>
 
-      <PriceAxis height={height} />
+      <PriceAxis />
     </div>
   );
 };

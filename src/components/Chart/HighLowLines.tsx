@@ -1,15 +1,12 @@
 // components/HighLowLines.tsx - 바이낸스 스타일 최고/최저 표시
 import { useAtomValue } from 'jotai';
 import React, { useMemo } from 'react';
+import { chartDimensionsAtom } from '../../stores/atoms/chartConfigAtoms';
 import { visibleDataAtom } from '../../stores/atoms/dataAtoms';
 import { indexDomainAtom, priceDomainAtom } from '../../stores/atoms/domainAtoms';
 
-interface HighLowLinesProps {
-  width: number;
-  height: number;
-}
-
-export const HighLowLines: React.FC<HighLowLinesProps> = ({ width, height }) => {
+export const HighLowLines: React.FC = () => {
+  const { width, height } = useAtomValue(chartDimensionsAtom);
   const visibleData = useAtomValue(visibleDataAtom);
   const indexDomain = useAtomValue(indexDomainAtom);
   const priceDomain = useAtomValue(priceDomainAtom);

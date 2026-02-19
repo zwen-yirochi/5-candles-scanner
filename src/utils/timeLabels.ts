@@ -96,22 +96,22 @@ export const TIME_LABEL_SETS: TimeLabelSet[] = [
     },
 ];
 
+export const indexToTimestamp = (
+    index: number,
+    ref: { index: number; timestamp: number },
+    intervalMs: number
+): number => {
+    return ref.timestamp + (index - ref.index) * intervalMs;
+};
+
 export const getVisibleTimeLabels = (
-    data: { timestamp: number }[],
-    startIndex: number,
-    endIndex: number,
+    startTime: number,
+    endTime: number,
     maxLabelCount: number = 8
 ): { timestamps: number[]; format: Intl.DateTimeFormatOptions; interval: number } => {
-    if (data.length === 0) return { timestamps: [], format: {}, interval: 0 };
+    if (startTime >= endTime) return { timestamps: [], format: {}, interval: 0 };
 
-    const start = Math.floor(startIndex);
-    const end = Math.min(Math.ceil(endIndex), data.length - 1);
-
-    if (start >= data.length || end < 0) {
-        return { timestamps: [], format: {}, interval: 0 };
-    }
-
-    const timeRange = data[end].timestamp - data[start].timestamp;
+    const timeRange = endTime - startTime;
 
     // 적절한 라벨 세트 선택
     const labelSet =
@@ -119,7 +119,7 @@ export const getVisibleTimeLabels = (
 
     // 보이는 범위 내의 타임스탬프만 필터링
     const visibleTimestamps = labelSet.timestamps.filter(
-        (ts) => ts >= data[start].timestamp && ts <= data[end].timestamp
+        (ts) => ts >= startTime && ts <= endTime
     );
 
     // 너무 많으면 간격 조정
@@ -139,34 +139,6 @@ export const getVisibleTimeLabels = (
     };
 };
 
-// 타임스탬프에 가장 가까운 데이터 인덱스 찾기 (십자선용)
-export const findClosestDataIndex = (
-    data: { timestamp: number }[],
-    targetTimestamp: number,
-    startIndex: number = 0,
-    endIndex?: number
-): number => {
-    if (data.length === 0) return 0;
-
-    const start = Math.max(0, Math.min(startIndex, data.length - 1));
-    const end = Math.max(0, Math.min(endIndex ?? data.length - 1, data.length - 1));
-
-    if (start > end) return start;
-
-    let closestIndex = start;
-    let minDiff = Math.abs(data[start].timestamp - targetTimestamp);
-
-    for (let i = start; i <= end; i++) {
-        const diff = Math.abs(data[i].timestamp - targetTimestamp);
-        if (diff < minDiff) {
-            minDiff = diff;
-            closestIndex = i;
-        }
-        if (data[i].timestamp > targetTimestamp) break;
-    }
-
-    return closestIndex;
-};
 
 export const formatTimestamp = (
     timestamp: number,

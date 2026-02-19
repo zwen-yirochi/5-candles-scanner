@@ -7,14 +7,15 @@ export const rawDataAtom = atom<CandleData[]>([]);
 
 export const hasDataAtom = atom((get) => get(rawDataAtom).length > 0);
 
+export const timeReferenceAtom = atom((get) => {
+    const data = get(rawDataAtom);
+    if (data.length === 0) return null;
+    return { index: 0, timestamp: data[0].timestamp };
+});
+
 export const currentPriceAtom = atom((get) => {
     const data = get(rawDataAtom);
     return data.length > 0 ? data[data.length - 1].close : null;
-});
-
-export const prevPriceAtom = atom((get) => {
-    const data = get(rawDataAtom);
-    return data.length > 1 ? data[data.length - 2].close : null;
 });
 
 export const visibleDataAtom = atom((get) => {

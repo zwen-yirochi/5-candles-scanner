@@ -1,50 +1,39 @@
 import { useAtom, useAtomValue } from 'jotai';
 import React, { useMemo } from 'react';
 import { useZoomDrag } from '../../hooks/useZoomDrag';
-import { rawDataAtom } from '../../stores/atoms/dataAtoms';
+import { chartDimensionsAtom, intervalMsAtom } from '../../stores/atoms/chartConfigAtoms';
+import { timeReferenceAtom } from '../../stores/atoms/dataAtoms';
 import { indexDomainAtom } from '../../stores/atoms/domainAtoms';
-import { findClosestDataIndex, formatTimestamp, getVisibleTimeLabels } from '../../utils/timeLabels';
+import { formatTimestamp, getVisibleTimeLabels, indexToTimestamp } from '../../utils/timeLabels';
 
-interface TimeAxisProps {
-  width: number;
-  height?: number;
-}
+const TIME_AXIS_HEIGHT = 60;
 
-export const TimeAxis: React.FC<TimeAxisProps> = ({ width, height = 60 }) => {
+export const TimeAxis: React.FC = () => {
+  const { width } = useAtomValue(chartDimensionsAtom);
   const [indexDomain, setIndexDomain] = useAtom(indexDomainAtom);
-  const data = useAtomValue(rawDataAtom);
+  const timeRef = useAtomValue(timeReferenceAtom);
+  const intervalMs = useAtomValue(intervalMsAtom);
 
   // 보이는 라벨 계산
   const { labelData, interval } = useMemo(() => {
-    const { timestamps, format, interval } = getVisibleTimeLabels(
-      data,
-      indexDomain.startIndex,
-      indexDomain.endIndex,
-      8,
-    );
+    if (!timeRef) return { labelData: [], interval: 0 };
 
-    const indexRange = indexDomain.endIndex - indexDomain.startIndex;
+    const startTime = indexToTimestamp(indexDomain.startIndex, timeRef, intervalMs);
+    const endTime = indexToTimestamp(indexDomain.endIndex, timeRef, intervalMs);
+
+    const { timestamps, format, interval } = getVisibleTimeLabels(startTime, endTime, 8);
+
+    const timeRange = endTime - startTime;
 
     return {
-      labelData: timestamps.map((ts) => {
-        const index = findClosestDataIndex(
-          data,
-          ts,
-          Math.floor(indexDomain.startIndex),
-          Math.ceil(indexDomain.endIndex),
-        );
-
-        return {
-          timestamp: ts,
-          index,
-          x: ((index - indexDomain.startIndex) / indexRange) * width,
-          label: formatTimestamp(ts, format),
-        };
-      }),
-      format,
+      labelData: timestamps.map((ts) => ({
+        timestamp: ts,
+        x: ((ts - startTime) / timeRange) * width,
+        label: formatTimestamp(ts, format),
+      })),
       interval,
     };
-  }, [indexDomain, data, width]);
+  }, [indexDomain, timeRef, intervalMs, width]);
 
   // 줌 함수
   const handleZoom = (factor: number) => {
@@ -76,11 +65,11 @@ export const TimeAxis: React.FC<TimeAxisProps> = ({ width, height = 60 }) => {
 
   return (
     <div
-      className={`relative bg-gradient-to-b from-gray-800 to-gray-900 border-t-2 border-gray-600 
+      className={`relative bg-gradient-to-b from-gray-800 to-gray-900 border-t-2 border-gray-600
                 cursor-ew-resize select-none transition-colors ${
                   isDragging ? 'bg-blue-900' : 'hover:from-gray-700 hover:to-gray-800'
                 }`}
-      style={{ width, height }}
+      style={{ width, height: TIME_AXIS_HEIGHT }}
       onMouseDown={handleMouseDown}
     >
       {/* 드래그 인디케이터 */}
@@ -92,7 +81,7 @@ export const TimeAxis: React.FC<TimeAxisProps> = ({ width, height = 60 }) => {
 
       {/* 시간 라벨 */}
       <div className="absolute inset-x-0 bottom-2">
-        {labelData.map((item, i) => (
+        {labelData.map((item) => (
           <div
             key={item.timestamp}
             className="absolute flex flex-col items-center transform -translate-x-1/2"
