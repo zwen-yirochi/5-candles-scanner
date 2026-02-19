@@ -9,3 +9,5 @@ export type { LoadingSpinnerProps } from './LoadingSpinner';
 
 export { ErrorMessage } from './ErrorMessage';
 export type { ErrorMessageProps } from './ErrorMessage';
+
+export { ChartErrorBoundary } from './ChartErrorBoundary';

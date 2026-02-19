@@ -3,15 +3,15 @@ import { useAtomValue } from 'jotai';
 import { CHART_DIMENSIONS } from '../constants/chart.constants';
 import { useChartData } from '../hooks/useChartData';
 import { useResizeObserver } from '../hooks/useResizeObserver';
-import { dataLengthAtom } from '../stores/atoms/dataAtoms';
+import { hasDataAtom } from '../stores/atoms/dataAtoms';
 import { CandlestickChart } from '../components/Chart/CandlestickChart';
 import { ChartHeader } from '../components/Chart/ChartHeader';
-import { ErrorMessage, LoadingSpinner } from '../components/common';
+import { ChartErrorBoundary, LoadingSpinner } from '../components/common';
 
-const Dashboard: React.FC = () => {
+const DashboardContent: React.FC = () => {
   const { ref, width: containerWidth, height: containerHeight } = useResizeObserver();
-  const { loading, error, refetch } = useChartData();
-  const dataLength = useAtomValue(dataLengthAtom);
+  const { loading, error } = useChartData();
+  const hasData = useAtomValue(hasDataAtom);
 
   const chartDimensions = useMemo(() => {
     const padding = 32;
@@ -20,12 +20,12 @@ const Dashboard: React.FC = () => {
     return { width, height };
   }, [containerWidth, containerHeight]);
 
-  if (loading && dataLength === 0) {
+  if (loading && !hasData) {
     return <LoadingSpinner message="데이터 로딩 중..." />;
   }
 
-  if (error && dataLength === 0) {
-    return <ErrorMessage message={error} onRetry={refetch} />;
+  if (error && !hasData) {
+    throw new Error(error);
   }
 
   return (
@@ -34,7 +34,7 @@ const Dashboard: React.FC = () => {
         <ChartHeader />
 
         <div ref={ref} className="w-full h-[calc(80vh-120px)] p-4">
-          {dataLength > 0 && chartDimensions.width > 0 && chartDimensions.height > 0 ? (
+          {hasData && chartDimensions.width > 0 && chartDimensions.height > 0 ? (
             <CandlestickChart width={chartDimensions.width} height={chartDimensions.height} />
           ) : (
             <div className="flex items-center justify-center h-full bg-gray-800 border border-gray-700 rounded-lg">
@@ -44,6 +44,14 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const Dashboard: React.FC = () => {
+  return (
+    <ChartErrorBoundary>
+      <DashboardContent />
+    </ChartErrorBoundary>
   );
 };
 

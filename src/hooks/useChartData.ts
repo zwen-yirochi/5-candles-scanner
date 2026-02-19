@@ -63,7 +63,8 @@ export const useChartData = (): UseChartDataReturn => {
       setRawData(parsed);
       setStats24hr(stats24hrResult);
     } catch (err) {
-      setError('데이터를 불러오는데 실패했습니다.');
+      const message = err instanceof Error ? err.message : '데이터를 불러오는데 실패했습니다.';
+      setError(message);
       console.error('Fetch error:', err);
     } finally {
       setLoading(false);

@@ -5,7 +5,7 @@ import { indexDomainAtom } from './domainAtoms';
 
 export const rawDataAtom = atom<CandleData[]>([]);
 
-export const dataLengthAtom = atom((get) => get(rawDataAtom).length);
+export const hasDataAtom = atom((get) => get(rawDataAtom).length > 0);
 
 export const currentPriceAtom = atom((get) => {
     const data = get(rawDataAtom);
