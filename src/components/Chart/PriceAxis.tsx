@@ -47,7 +47,7 @@ export const PriceAxis: React.FC = () => {
     const newRange = currentRange * factor;
     if (newRange < AXIS.PRICE.MIN_RANGE) return;
     setPriceDomain({
-      minPrice: center - newRange / 2,
+      minPrice: Math.max(0, center - newRange / 2),
       maxPrice: center + newRange / 2,
     });
   };
@@ -66,7 +66,7 @@ export const PriceAxis: React.FC = () => {
     const padding = (max - min) * 0.15;
 
     setPriceDomain({
-      minPrice: min - padding,
+      minPrice: Math.max(0, min - padding),
       maxPrice: max + padding,
     });
   };
@@ -74,7 +74,7 @@ export const PriceAxis: React.FC = () => {
   return (
     <div className="relative">
       <div
-        className={`relative bg-gradient-to-r from-gray-800 to-gray-900 border-l-2 border-gray-600
+        className={`relative overflow-hidden bg-gradient-to-r from-gray-800 to-gray-900 border-l-2 border-gray-600
                 cursor-ns-resize select-none transition-colors ${
                   isDragging ? 'bg-blue-900' : 'hover:from-gray-700 hover:to-gray-800'
                 }`}
