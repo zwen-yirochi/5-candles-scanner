@@ -9,9 +9,9 @@
 
 ---
 
-## 한 줄 소개
+## Description
 
-5개 이상의 연속 동일 방향 캔들(연속 양봉 / 연속 음봉)을 감지하여 **수급 존(Supply/Demand Zone)** 을 자동 마킹하는 실시간 암호화폐 차트 애플리케이션입니다.
+5개 이상의 연속 동일 방향 캔들을 감지하여 **Supply/Demand Zone** 을 자동 마킹하는 실시간 암호화폐 차트 애플리케이션입니다.
 
 ---
 
@@ -37,42 +37,10 @@
 | Rendering | Canvas 2D API (커스텀 구현) |
 | Styling | Tailwind CSS |
 | Data | Binance REST API + WebSocket |
-| Testing | Storybook 8, React Testing Library |
 
 ---
 
-## 아키텍처 하이라이트
 
-```
-Binance REST ──→ rawDataAtom ──→ visibleDataAtom ──→ useCandleCanvas ──→ <canvas>
-Binance WS   ──→ updateCandleAtom ↗
-                                    ↘ patternZonesAtom (per TF) ──→ displayZonesAtom
-```
-
-- **Jotai 파생 atom** — 패턴 존 감지, 가시 데이터 슬라이싱이 파생 atom 안에서 자동 수행. 수동 캐시 무효화 불필요
-- **Write-only action atom** — zoom, pan, 초기화 등 비즈니스 로직을 write-only atom으로 캡슐화
-- **Ref 패턴 콜백** — WebSocket·이벤트 핸들러를 ref에 저장하여 리스너 재등록 없이 최신 콜백 호출
-- **Canvas + DOM 하이브리드** — 고비용 데이터(캔들, 존)는 Canvas, 오버레이(크로스헤어, 가격선, 툴팁)는 경량 DOM
-
----
-
-## 시작하기
-
-```bash
-git clone https://github.com/zwen-yirochi/5-candles-scanner.git
-cd 5-candles-scanner
-npm install
-npm start          # http://localhost:3000
-```
-
-### 기타 스크립트
-
-```bash
-npm run build           # 프로덕션 빌드
-npm run storybook       # Storybook (http://localhost:6006)
-```
-
----
 
 ## 사용법
 
