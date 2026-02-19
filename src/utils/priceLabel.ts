@@ -12,9 +12,11 @@ export const getVisiblePriceLabels = (
     maxLabels: number = 10
 ): { labels: number[]; step: number } => {
     const range = maxPrice - minPrice;
+    if (range <= 0) return { labels: [minPrice], step: 1 };
 
     // Calculate nice step size
     const roughStep = range / (maxLabels - 1);
+    if (roughStep <= 0) return { labels: [minPrice, maxPrice], step: range };
     const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
 
     // Round to nice numbers (1, 2, 5)
@@ -28,7 +30,7 @@ export const getVisiblePriceLabels = (
     // Generate labels
     const firstLabel = Math.ceil(minPrice / step) * step;
     const labels: number[] = [];
-    for (let price = firstLabel; price <= maxPrice; price += step) {
+    for (let price = firstLabel; price <= maxPrice && labels.length < maxLabels + 2; price += step) {
         labels.push(price);
     }
 

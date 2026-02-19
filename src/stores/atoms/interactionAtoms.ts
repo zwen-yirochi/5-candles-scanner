@@ -7,11 +7,6 @@ import { CandleData } from '../../types/candle.types';
 // 빈도: 낮음 (mousedown/mouseup 전환 시에만)
 export const isDraggingAtom = atom(false);
 
-// ━━━ Crosshair 위치 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 차트 컨테이너 내 픽셀 좌표. null = 마우스가 차트 밖.
-// 현재 Crosshair가 이미 useState로 매 mousemove마다 리렌더하므로 성능 동등.
-export const crosshairPositionAtom = atom<{ x: number; y: number } | null>(null);
-
 // ━━━ 호버된 캔들 상태 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export interface HoveredCandleState {
   candle: CandleData;

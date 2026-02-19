@@ -1,9 +1,9 @@
 import { useAtomValue, useSetAtom } from 'jotai';
-import { useCallback, useEffect, useRef } from 'react';
+import { RefObject, useCallback, useEffect, useRef } from 'react';
 import { hoveredCandleAtom, isDraggingAtom } from '../stores/atoms/interactionAtoms';
-import { CandleData } from '../types/candle.types';
-import { ChartDomain } from '../types/domain.types';
-import { ChartRange } from '../types/range.types';
+import { rawDataAtom } from '../stores/atoms/dataAtoms';
+import { chartDomainAtom } from '../stores/atoms/domainAtoms';
+import { chartRangeAtom } from '../stores/atoms/rangeAtoms';
 import { indexToPixel, pixelToIndex, priceToPixel } from '../utils/domainToRange';
 
 const HOVER_DELAY = 500;
@@ -44,19 +44,10 @@ const calculateTooltipPosition = (
   return { x, y };
 };
 
-interface UseCandleHoverResult {
-  handleMouseMove: (e: React.MouseEvent, chartRect: DOMRect) => void;
-  handleMouseLeave: () => void;
-  handleTouchStart: (e: React.TouchEvent, chartRect: DOMRect) => void;
-  handleTouchMove: () => void;
-  handleTouchEnd: () => void;
-}
-
-export const useCandleHover = (
-  data: CandleData[],
-  domain: ChartDomain,
-  range: ChartRange
-): UseCandleHoverResult => {
+export const useCandleHover = (containerRef: RefObject<HTMLDivElement | null>) => {
+  const data = useAtomValue(rawDataAtom);
+  const domain = useAtomValue(chartDomainAtom);
+  const range = useAtomValue(chartRangeAtom);
   const isDragging = useAtomValue(isDraggingAtom);
   const setHoveredCandle = useSetAtom(hoveredCandleAtom);
 
@@ -122,11 +113,10 @@ export const useCandleHover = (
   }, [isDragging, hideTooltip]);
 
   const handleMouseMove = useCallback(
-    (e: React.MouseEvent, chartRect: DOMRect) => {
-      if (isDragging) {
-        return;
-      }
+    (e: React.MouseEvent) => {
+      if (isDragging || !containerRef.current) return;
 
+      const chartRect = containerRef.current.getBoundingClientRect();
       const mouseX = e.clientX - chartRect.left;
       const candleIndex = pixelToIndex(mouseX, domain.index, range);
 
@@ -150,7 +140,7 @@ export const useCandleHover = (
         }, HOVER_DELAY);
       }
     },
-    [isDragging, domain.index, range, data.length, clearTimers, showTooltip, hideTooltip]
+    [isDragging, containerRef, domain.index, range, data.length, clearTimers, showTooltip, hideTooltip]
   );
 
   const handleMouseLeave = useCallback(() => {
@@ -158,9 +148,10 @@ export const useCandleHover = (
   }, [hideTooltip]);
 
   const handleTouchStart = useCallback(
-    (e: React.TouchEvent, chartRect: DOMRect) => {
-      if (isDragging) return;
+    (e: React.TouchEvent) => {
+      if (isDragging || !containerRef.current) return;
 
+      const chartRect = containerRef.current.getBoundingClientRect();
       const touch = e.touches[0];
       const touchX = touch.clientX - chartRect.left;
       const candleIndex = pixelToIndex(touchX, domain.index, range);
@@ -178,7 +169,7 @@ export const useCandleHover = (
         showTooltip(candleIndex);
       }, HOVER_DELAY);
     },
-    [isDragging, domain.index, range, data.length, clearTimers, showTooltip]
+    [isDragging, containerRef, domain.index, range, data.length, clearTimers, showTooltip]
   );
 
   const handleTouchMove = useCallback(() => {

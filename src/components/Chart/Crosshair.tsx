@@ -1,16 +1,12 @@
-import { useAtom, useAtomValue } from 'jotai';
-import React, { useCallback } from 'react';
+import { useAtomValue } from 'jotai';
+import React, { useCallback, useState } from 'react';
+import { chartDimensionsAtom } from '../../stores/atoms/chartConfigAtoms';
 import { visibleDataAtom } from '../../stores/atoms/dataAtoms';
 import { indexDomainAtom, priceDomainAtom } from '../../stores/atoms/domainAtoms';
-import { crosshairPositionAtom } from '../../stores/atoms/interactionAtoms';
 
-interface CrosshairProps {
-  width: number;
-  height: number;
-}
-
-export const Crosshair: React.FC<CrosshairProps> = ({ width, height }) => {
-  const [mousePos, setMousePos] = useAtom(crosshairPositionAtom);
+export const Crosshair: React.FC = () => {
+  const { width, height } = useAtomValue(chartDimensionsAtom);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const visibleData = useAtomValue(visibleDataAtom);
   const indexDomain = useAtomValue(indexDomainAtom);
   const priceDomain = useAtomValue(priceDomainAtom);

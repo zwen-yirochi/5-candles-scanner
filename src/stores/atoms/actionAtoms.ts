@@ -28,7 +28,7 @@ function calculatePriceDomain(data: CandleData[]) {
   const padding = (max - min) * CONFIG.PRICE_PADDING;
 
   return {
-    minPrice: min - padding,
+    minPrice: Math.max(0, min - padding),
     maxPrice: max + padding,
   };
 }

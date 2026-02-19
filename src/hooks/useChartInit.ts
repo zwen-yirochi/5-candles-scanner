@@ -1,11 +1,13 @@
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useEffect, useRef } from 'react';
 import { initializeChartAtom } from '../stores/atoms/actionAtoms';
+import { chartDimensionsAtom } from '../stores/atoms/chartConfigAtoms';
 import { rawDataAtom, visibleDataAtom } from '../stores/atoms/dataAtoms';
 import { chartDomainAtom, indexDomainAtom } from '../stores/atoms/domainAtoms';
 import { chartRangeAtom } from '../stores/atoms/rangeAtoms';
 
-export const useChartInit = (width: number, height: number) => {
+export const useChartInit = () => {
+  const { width, height } = useAtomValue(chartDimensionsAtom);
   const chartData = useAtomValue(rawDataAtom);
   const domain = useAtomValue(chartDomainAtom);
   const range = useAtomValue(chartRangeAtom);

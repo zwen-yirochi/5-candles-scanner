@@ -75,10 +75,13 @@ export const useChartPanZoom = () => {
           const pricePerPixel = priceRange / currentRange.height;
           const priceDelta = deltaY * pricePerPixel;
 
-          setPriceDomain({
-            minPrice: currentPriceDomain.minPrice + priceDelta,
-            maxPrice: currentPriceDomain.maxPrice + priceDelta,
-          });
+          const newMin = currentPriceDomain.minPrice + priceDelta;
+          if (newMin >= 0) {
+            setPriceDomain({
+              minPrice: newMin,
+              maxPrice: currentPriceDomain.maxPrice + priceDelta,
+            });
+          }
         }
 
         dragStartRef.current = { x: e.clientX, y: e.clientY };

@@ -2,20 +2,17 @@ import { useAtom, useAtomValue } from 'jotai';
 import React, { useMemo } from 'react';
 import { AXIS, CHART_DIMENSIONS } from '../../constants/chart.constants';
 import { useZoomDrag } from '../../hooks/useZoomDrag';
-import { prevPriceAtom, visibleDataAtom } from '../../stores/atoms/dataAtoms';
+import { chartDimensionsAtom } from '../../stores/atoms/chartConfigAtoms';
+import { currentPriceAtom, visibleDataAtom } from '../../stores/atoms/dataAtoms';
 import { priceDomainAtom } from '../../stores/atoms/domainAtoms';
 import { formatPrice, getVisiblePriceLabels } from '../../utils/priceLabel';
 
-export interface PriceAxisProps {
-  height: number;
-  width?: number;
-  currentPrice?: number;
-}
-
-export const PriceAxis: React.FC<PriceAxisProps> = ({ height, width = CHART_DIMENSIONS.AXIS_WIDTH, currentPrice }) => {
+export const PriceAxis: React.FC = () => {
+  const { height } = useAtomValue(chartDimensionsAtom);
+  const axisWidth = CHART_DIMENSIONS.AXIS_WIDTH;
+  const currentPrice = useAtomValue(currentPriceAtom);
   const [priceDomain, setPriceDomain] = useAtom(priceDomainAtom);
   const visibleData = useAtomValue(visibleDataAtom);
-  const prevPrice = useAtomValue(prevPriceAtom);
   // Get visible price labels
   const { labels: visibleLabels, step } = useMemo(() => {
     return getVisiblePriceLabels(priceDomain.minPrice, priceDomain.maxPrice, 10);
@@ -37,15 +34,12 @@ export const PriceAxis: React.FC<PriceAxisProps> = ({ height, width = CHART_DIME
     if (!currentPrice) return null;
     const priceRange = priceDomain.maxPrice - priceDomain.minPrice;
     const y = height - ((currentPrice - priceDomain.minPrice) / priceRange) * height;
-
-    const isRising = currentPrice >= (prevPrice ?? currentPrice);
     return {
       price: currentPrice,
       y,
-      isRising,
       label: formatPrice(currentPrice, step),
     };
-  }, [currentPrice, prevPrice, priceDomain, height, step]);
+  }, [currentPrice, priceDomain, height, step]);
 
   const handleZoom = (factor: number) => {
     const center = (priceDomain.minPrice + priceDomain.maxPrice) / 2;
@@ -53,7 +47,7 @@ export const PriceAxis: React.FC<PriceAxisProps> = ({ height, width = CHART_DIME
     const newRange = currentRange * factor;
     if (newRange < AXIS.PRICE.MIN_RANGE) return;
     setPriceDomain({
-      minPrice: center - newRange / 2,
+      minPrice: Math.max(0, center - newRange / 2),
       maxPrice: center + newRange / 2,
     });
   };
@@ -72,7 +66,7 @@ export const PriceAxis: React.FC<PriceAxisProps> = ({ height, width = CHART_DIME
     const padding = (max - min) * 0.15;
 
     setPriceDomain({
-      minPrice: min - padding,
+      minPrice: Math.max(0, min - padding),
       maxPrice: max + padding,
     });
   };
@@ -80,11 +74,11 @@ export const PriceAxis: React.FC<PriceAxisProps> = ({ height, width = CHART_DIME
   return (
     <div className="relative">
       <div
-        className={`relative bg-gradient-to-r from-gray-800 to-gray-900 border-l-2 border-gray-600
+        className={`relative overflow-hidden bg-gradient-to-r from-gray-800 to-gray-900 border-l-2 border-gray-600
                 cursor-ns-resize select-none transition-colors ${
                   isDragging ? 'bg-blue-900' : 'hover:from-gray-700 hover:to-gray-800'
                 }`}
-        style={{ width, height }}
+        style={{ width: axisWidth, height }}
         onMouseDown={handleMouseDown}
       >
         {currentPriceData && (
@@ -92,15 +86,9 @@ export const PriceAxis: React.FC<PriceAxisProps> = ({ height, width = CHART_DIME
             className="absolute left-0 z-10 flex items-center "
             style={{ top: `${currentPriceData.y}px`, transform: 'translateY(-50%)' }}
           >
-            {/* Highlighted indicator line */}
-            <div className={`w-2 h-px ${currentPriceData.isRising ? 'bg-green-500' : 'bg-red-500'}`} />
+            <div className="w-2 h-px bg-gray-300" />
 
-            {/* Current Price */}
-            <div
-              className={`px-2 py-1 text-xs font-mono font-bold text-white rounded ${
-                currentPriceData.isRising ? 'bg-green-600' : 'bg-red-600'
-              }`}
-            >
+            <div className="px-2 py-1 text-xs font-mono font-bold text-white rounded bg-gray-600">
               ${currentPriceData.label}
             </div>
           </div>
@@ -134,7 +122,7 @@ export const PriceAxis: React.FC<PriceAxisProps> = ({ height, width = CHART_DIME
       <button
         onClick={autoFit}
         className="absolute w-full p-1 text-xs text-white transform -translate-x-1/2 bg-blue-600 rounded-b left-1/2 hover:bg-blue-700"
-        style={{ top: height }}
+        style={{ top: `${height}px` }}
       >
         Auto Fit
       </button>
