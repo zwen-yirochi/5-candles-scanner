@@ -4,7 +4,8 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { CANDLESTICK, CHART_COLORS } from '../../constants/chart.constants';
 import { useCandleHover } from '../../hooks/useCandleHover';
 import { useChart } from '../../hooks/useChart';
-import { currentPriceAtom, hasDataAtom, rawDataAtom } from '../../stores/atoms/dataAtoms';
+import { useChartData } from '../../hooks/useChartData';
+import { currentPriceAtom, rawDataAtom } from '../../stores/atoms/dataAtoms';
 import { candleToPixels } from '../../utils/domainToRange';
 import { getVisiblePriceLabels } from '../../utils/priceLabel';
 import { CandleTooltip } from './CandleTooltip';
@@ -20,9 +21,9 @@ export interface CandlestickChartProps {
 }
 
 export const CandlestickChart: React.FC<CandlestickChartProps> = ({ width, height }) => {
+  const { loading, error } = useChartData();
   const chartData = useAtomValue(rawDataAtom);
   const currentPrice = useAtomValue(currentPriceAtom);
-  const hasData = useAtomValue(hasDataAtom);
   const chartWidth = width - 40;
   const chart = useChart(chartWidth, height);
   // const { timeframeData, patterns, loading, error } = usePatternAnalysis('BTCUSDT');
@@ -171,13 +172,8 @@ export const CandlestickChart: React.FC<CandlestickChartProps> = ({ width, heigh
     };
   }, [chart.visibleData, chart.domain, chart.range, chartWidth, height]);
 
-  if (!hasData) {
-    return (
-      <div className="flex items-center justify-center border rounded-lg h-96 bg-gray-50">
-        <p className="text-gray-500">No data available</p>
-      </div>
-    );
-  }
+  if (error) throw new Error(error);
+  if (loading || chartData.length === 0) return null;
 
   return (
     <div className="bg-black border-2 shadow-lg">
