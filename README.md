@@ -1,46 +1,119 @@
-# Getting Started with Create React App
+# 5 Candles Scanner
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+> Binance 실시간 캔들스틱 차트 뷰어 & 멀티타임프레임 패턴 존 스캐너
 
-## Available Scripts
+**[Live Demo](https://zwen-yirochi.github.io/5-candles-scanner)**
 
-In the project directory, you can run:
+<!-- 스크린샷을 추가하면 임팩트가 훨씬 올라갑니다 -->
+<!-- ![screenshot](./docs/screenshot.png) -->
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## 한 줄 소개
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+5개 이상의 연속 동일 방향 캔들(연속 양봉 / 연속 음봉)을 감지하여 **수급 존(Supply/Demand Zone)** 을 자동 마킹하는 실시간 암호화폐 차트 애플리케이션입니다.
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 주요 기능
 
-### `npm run build`
+| 기능 | 설명 |
+|------|------|
+| **실시간 WebSocket** | Binance WebSocket 스트림으로 틱 단위 캔들 업데이트. 지수 백오프 자동 재연결 |
+| **멀티타임프레임 존 스캔** | 15m · 30m · 1h · 4h 데이터를 병렬 fetch 후, Pine Script 방식 알고리즘으로 수급 존 감지 |
+| **Canvas 렌더링** | SVG 대신 Canvas 2D API로 캔들·그리드·존을 직접 렌더링. HiDPI 대응 + `desynchronized` 옵션으로 저지연 |
+| **Pan & Zoom** | 드래그 패닝, 휠 줌, 축별 드래그 줌. `requestAnimationFrame` 스로틀링으로 60fps 유지 |
+| **크로스헤어 & 툴팁** | 마우스 위치에 십자선 + 호버 시 OHLCV 상세 툴팁. 터치 디바이스 지원 |
+| **미니멀 라이트 테마** | 크림 배경 + pill 형태 캔들. 의도적으로 빨강/초록을 배제한 모노크롬 팔레트 |
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 기술 스택
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+| 영역 | 기술 |
+|------|------|
+| Framework | React 19, TypeScript |
+| State | Jotai (파생 atom 기반 반응형 계산 그래프) |
+| Rendering | Canvas 2D API (커스텀 구현) |
+| Styling | Tailwind CSS |
+| Data | Binance REST API + WebSocket |
+| Testing | Storybook 8, React Testing Library |
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## 아키텍처 하이라이트
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```
+Binance REST ──→ rawDataAtom ──→ visibleDataAtom ──→ useCandleCanvas ──→ <canvas>
+Binance WS   ──→ updateCandleAtom ↗
+                                    ↘ patternZonesAtom (per TF) ──→ displayZonesAtom
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+- **Jotai 파생 atom** — 패턴 존 감지, 가시 데이터 슬라이싱이 파생 atom 안에서 자동 수행. 수동 캐시 무효화 불필요
+- **Write-only action atom** — zoom, pan, 초기화 등 비즈니스 로직을 write-only atom으로 캡슐화
+- **Ref 패턴 콜백** — WebSocket·이벤트 핸들러를 ref에 저장하여 리스너 재등록 없이 최신 콜백 호출
+- **Canvas + DOM 하이브리드** — 고비용 데이터(캔들, 존)는 Canvas, 오버레이(크로스헤어, 가격선, 툴팁)는 경량 DOM
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+---
 
-## Learn More
+## 시작하기
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```bash
+git clone https://github.com/zwen-yirochi/5-candles-scanner.git
+cd 5-candles-scanner
+npm install
+npm start          # http://localhost:3000
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 기타 스크립트
+
+```bash
+npm run build           # 프로덕션 빌드
+npm run storybook       # Storybook (http://localhost:6006)
+```
+
+---
+
+## 사용법
+
+1. 상단 바에서 **심볼** (BTC, ETH, BNB, SOL) 과 **인터벌** (1m ~ 1d) 선택
+2. 차트 영역에서 **드래그**로 패닝, **스크롤**로 줌 인/아웃
+3. 패턴 존 패널에서 **타임프레임별 토글** 및 **브레이크아웃 모드** (Cut / Delete) 설정
+4. 캔들 위에 마우스를 올리면 **OHLCV 툴팁** 표시
+
+---
+
+## 프로젝트 구조
+
+```
+src/
+├── components/
+│   ├── Chart/
+│   │   ├── CandlestickChart.tsx   # 차트 컨테이너
+│   │   ├── ChartArea.tsx          # Canvas + 오버레이 조합
+│   │   ├── ChartHeader/           # 심볼바, 인터벌바, 가격 정보
+│   │   ├── Crosshair.tsx
+│   │   ├── CurrentPriceLine.tsx
+│   │   ├── HighLowLines.tsx
+│   │   └── PatternControlPanel.tsx
+│   └── common/                    # Button, Select, ErrorBoundary 등
+├── hooks/
+│   ├── useCandleCanvas.ts         # Canvas 렌더링 루프
+│   ├── useChartPanZoom.ts         # 드래그·줌 인터랙션
+│   ├── useBinanceWebSocket.ts     # WS 연결·재연결 관리
+│   ├── usePatternAnalysis.ts      # 멀티TF 데이터 fetch + 분석 트리거
+│   └── ...
+├── stores/atoms/                  # Jotai atom (config, data, domain, action, pattern)
+├── services/                      # Binance REST·WS 클라이언트
+├── utils/
+│   ├── patternAnalysis.ts         # 5-candle 존 감지 알고리즘
+│   └── ...
+└── pages/
+    └── Dashboard.tsx              # 메인 페이지
+```
+
+---
+
+## 라이선스
+
+MIT
