@@ -8,7 +8,7 @@ export const PriceChange: React.FC = () => {
   if (!stats) return null;
 
   const { priceChangePercent, isPositive } = stats;
-  const priceColor = isPositive ? 'text-green-500' : 'text-red-500';
+  const priceColor = isPositive ? 'text-gray-800' : 'text-gray-400';
 
   return (
     <span className={`text-lg font-semibold ${priceColor}`}>

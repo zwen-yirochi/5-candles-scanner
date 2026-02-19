@@ -28,25 +28,25 @@ export const CHART_DIMENSIONS = {
 
 export const CHART_COLORS = {
   RISING: {
-    body: 'bg-green-500',
-    border: 'border-green-600',
-    text: 'text-green-500',
+    body: 'bg-gray-800',
+    border: 'border-gray-800',
+    text: 'text-gray-800',
   },
 
   FALLING: {
-    body: 'bg-red-500',
-    border: 'border-red-600',
-    text: 'text-red-500',
+    body: 'bg-gray-300',
+    border: 'border-gray-300',
+    text: 'text-gray-400',
   },
 
   GRID: 'border-gray-200',
-  BACKGROUND: 'bg-gray-900',
+  BACKGROUND: 'bg-[#F5F5F0]',
 } as const;
 
 export const CANDLESTICK = {
-  BODY_WIDTH_RATIO: 0.9,
-  BODY_OFFSET_RATIO: 0.05,
-  MIN_BODY_HEIGHT: 2,
+  BODY_WIDTH_RATIO: 0.7,
+  BODY_OFFSET_RATIO: 0.15,
+  MIN_BODY_HEIGHT: 4,
   WICK_WIDTH: 1,
 } as const;
 

@@ -14,11 +14,11 @@ export const Button: React.FC<ButtonProps> = ({
     className = '',
     ...props
 }) => {
-    const baseStyles = 'font-medium transition-colors rounded';
+    const baseStyles = 'font-medium transition-colors rounded-full';
     const variantStyles = {
-        primary: 'text-white bg-blue-600 hover:bg-blue-700',
-        secondary: 'text-gray-400 hover:text-white hover:bg-gray-800',
-        ghost: active ? 'text-white bg-gray-700' : 'text-gray-400 hover:text-white hover:bg-gray-800',
+        primary: 'text-white bg-gray-800 hover:bg-gray-700',
+        secondary: 'text-gray-500 hover:text-gray-800 hover:bg-gray-100',
+        ghost: active ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-gray-800 hover:bg-gray-100',
     };
 
     const sizeStyles = {

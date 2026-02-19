@@ -55,19 +55,19 @@ export const Crosshair: React.FC = () => {
         <>
           {/* 수직선 */}
           <div
-            className="absolute top-0 bottom-0 z-20 w-px bg-gray-400 pointer-events-none"
-            style={{ left: `${mousePos.x}px` }}
+            className="absolute top-0 bottom-0 z-20 pointer-events-none"
+            style={{ left: `${mousePos.x}px`, width: '1px', background: '#D1D5DB', opacity: 0.6 }}
           />
 
           {/* 수평선 */}
           <div
-            className="absolute left-0 right-0 z-20 h-px bg-gray-400 pointer-events-none"
-            style={{ top: `${mousePos.y}px` }}
+            className="absolute left-0 right-0 z-20 pointer-events-none"
+            style={{ top: `${mousePos.y}px`, height: '1px', background: '#D1D5DB', opacity: 0.6 }}
           />
 
           {/* 가격 라벨 (우측) */}
           <div
-            className="absolute right-0 z-20 px-2 py-1 font-mono text-xs text-white transform -translate-y-1/2 bg-gray-700 pointer-events-none"
+            className="absolute right-0 z-20 px-2 py-1 font-mono text-xs text-gray-600 transform -translate-y-1/2 bg-white border border-gray-300 rounded pointer-events-none"
             style={{ top: `${mousePos.y}px` }}
           >
             ${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -75,7 +75,7 @@ export const Crosshair: React.FC = () => {
           {/* 시간 라벨 (하단) */}
           {currentTime && (
             <div
-              className="absolute bottom-0 z-20 px-2 py-1 font-mono text-xs text-white transform -translate-x-1/2 bg-gray-700 pointer-events-none"
+              className="absolute bottom-0 z-20 px-2 py-1 font-mono text-xs text-gray-600 transform -translate-x-1/2 bg-white border border-gray-300 rounded pointer-events-none"
               style={{ left: `${mousePos.x}px` }}
             >
               {currentTime}
