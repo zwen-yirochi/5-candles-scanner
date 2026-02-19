@@ -1,4 +1,6 @@
+import { useAtomValue } from 'jotai';
 import React from 'react';
+import { chartStatsAtom } from '../../../stores/atoms/dataAtoms';
 
 const formatPrice = (price: number): string => {
   return price.toLocaleString('en-US', {
@@ -7,14 +9,12 @@ const formatPrice = (price: number): string => {
   });
 };
 
-interface PriceInfoProps {
-  currentPrice: number;
-  high: number;
-  low: number;
-  isPositive: boolean;
-}
+export const PriceInfo: React.FC = () => {
+  const stats = useAtomValue(chartStatsAtom);
 
-export const PriceInfo: React.FC<PriceInfoProps> = ({ currentPrice, high, low, isPositive }) => {
+  if (!stats) return null;
+
+  const { currentPrice, high, low, isPositive } = stats;
   const priceColor = isPositive ? 'text-green-500' : 'text-red-500';
 
   return (
