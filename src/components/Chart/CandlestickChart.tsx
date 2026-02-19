@@ -44,6 +44,8 @@ export const CandlestickChart: React.FC = () => {
 
         <PriceAxis />
       </div>
+
+      <PriceAxis />
     </div>
   );
 };
