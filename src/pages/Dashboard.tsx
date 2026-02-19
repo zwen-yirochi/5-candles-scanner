@@ -8,13 +8,10 @@ const DashboardContent: React.FC = () => {
   const ref = useResizeObserver();
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="mx-auto max-w-7xl">
-        <ChartHeader />
-
-        <div ref={ref} className="w-full h-[calc(80vh-120px)] p-4">
-          <CandlestickChart />
-        </div>
+    <div className="min-h-screen mx-auto bg-black">
+      <ChartHeader />
+      <div ref={ref} className="w-full h-[calc(80vh-120px)] p-4">
+        <CandlestickChart />
       </div>
     </div>
   );

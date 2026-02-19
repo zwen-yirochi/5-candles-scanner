@@ -21,8 +21,7 @@ export const CandlestickChart: React.FC = () => {
   const { width, height } = useAtomValue(chartDimensionsAtom);
   const chartData = useAtomValue(rawDataAtom);
   const currentPrice = useAtomValue(currentPriceAtom);
-  const chartWidth = width - 40;
-  const chart = useChart(chartWidth, height);
+  const chart = useChart(width, height);
   // const { timeframeData, patterns, loading, error } = usePatternAnalysis('BTCUSDT');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -38,7 +37,7 @@ export const CandlestickChart: React.FC = () => {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 개별 함수만 의존성으로 사용 (객체 전체 사용 시 불필요한 리렌더링 발생)
-    [candleHover.handleMouseMove]
+    [candleHover.handleMouseMove],
   );
 
   const handleChartTouchStart = useCallback(
@@ -48,7 +47,7 @@ export const CandlestickChart: React.FC = () => {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 개별 함수만 의존성으로 사용 (객체 전체 사용 시 불필요한 리렌더링 발생)
-    [candleHover.handleTouchStart]
+    [candleHover.handleTouchStart],
   );
 
   const currentPriceValue = currentPrice ?? undefined;
@@ -80,7 +79,7 @@ export const CandlestickChart: React.FC = () => {
       if (!ctx) return;
 
       const dpr = window.devicePixelRatio || 1;
-      const displayWidth = chartWidth;
+      const displayWidth = width;
       const displayHeight = height;
 
       canvas.width = displayWidth * dpr;
@@ -167,7 +166,7 @@ export const CandlestickChart: React.FC = () => {
         cancelAnimationFrame(rafIdRef.current);
       }
     };
-  }, [chart.visibleData, chart.domain, chart.range, chartWidth, height]);
+  }, [chart.visibleData, chart.domain, chart.range, width, height]);
 
   if (error) throw new Error(error);
   if (loading || chartData.length === 0 || width === 0 || height === 0) return null;
@@ -180,7 +179,7 @@ export const CandlestickChart: React.FC = () => {
             <div
               ref={chartContainerRef}
               className={`relative overflow-hidden ${CHART_COLORS.BACKGROUND}`}
-              style={{ width: chartWidth, height }}
+              style={{ width: width, height }}
               onWheel={chart.handleWheel}
               onMouseDown={chart.handleMouseDown}
               onMouseMove={handleChartMouseMove}
@@ -202,15 +201,15 @@ export const CandlestickChart: React.FC = () => {
               <canvas ref={canvasRef} className="absolute top-0 left-0" style={{ pointerEvents: 'none' }} />
 
               {/* Overlays */}
-              <HighLowLines width={chartWidth} height={height} />
-              <CurrentPriceLine width={chartWidth} height={height} />
-              <Crosshair width={chartWidth} height={height} />
+              <HighLowLines width={width} height={height} />
+              <CurrentPriceLine width={width} height={height} />
+              <Crosshair width={width} height={height} />
 
               {/* Candle Tooltip */}
               <CandleTooltip />
             </div>
 
-            <TimeAxis width={chartWidth} />
+            <TimeAxis width={width} />
           </div>
 
           <PriceAxis height={height} currentPrice={currentPriceValue} />
