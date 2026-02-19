@@ -1,35 +1,25 @@
+import { useAtom, useAtomValue } from 'jotai';
 import React from 'react';
 import { CHART_INTERVALS, CHART_SYMBOLS } from '../../constants/chart.constants';
-import { ChartStats } from '../../types';
+import { chartStatsAtom, intervalAtom, symbolAtom, wsConnectedAtom } from '../../stores/atoms/chartConfigAtoms';
 import { Button, Select } from '../common';
-
-interface ChartHeaderProps {
-  symbol: string;
-  interval: string;
-  onSymbolChange: (symbol: string) => void;
-  onIntervalChange: (interval: string) => void;
-  stats: ChartStats;
-  isWebSocketConnected?: boolean;
-}
 
 const formatPrice = (price: number): string => {
   return price.toLocaleString('en-US', {
     minimumFractionDigits: 2,
-
     maximumFractionDigits: 2,
   });
 };
 
-export const ChartHeader: React.FC<ChartHeaderProps> = ({
-  symbol,
-  interval,
-  onSymbolChange,
-  onIntervalChange,
-  stats,
-  isWebSocketConnected = false,
-}) => {
-  const { currentPrice, priceChangePercent, high, low, isPositive } = stats;
+export const ChartHeader: React.FC = () => {
+  const [symbol, setSymbol] = useAtom(symbolAtom);
+  const [interval, setInterval] = useAtom(intervalAtom);
+  const stats = useAtomValue(chartStatsAtom);
+  const isWebSocketConnected = useAtomValue(wsConnectedAtom);
 
+  if (!stats) return null;
+
+  const { currentPrice, priceChangePercent, high, low, isPositive } = stats;
   const priceColor = isPositive ? 'text-green-500' : 'text-red-500';
 
   return (
@@ -38,7 +28,7 @@ export const ChartHeader: React.FC<ChartHeaderProps> = ({
 
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <Select options={CHART_SYMBOLS} value={symbol} onChange={onSymbolChange} />
+          <Select options={CHART_SYMBOLS} value={symbol} onChange={setSymbol} />
 
           <span className={`text-lg font-semibold ${priceColor}`}>
             {isPositive ? '+' : ''}
@@ -88,7 +78,7 @@ export const ChartHeader: React.FC<ChartHeaderProps> = ({
             variant="ghost"
             size="sm"
             active={interval === value}
-            onClick={() => onIntervalChange(value)}
+            onClick={() => setInterval(value)}
           >
             {label}
           </Button>
