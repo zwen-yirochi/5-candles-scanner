@@ -4,8 +4,8 @@
 
 **[Live Demo](https://zwen-yirochi.github.io/5-candles-scanner)**
 
-<!-- 스크린샷을 추가하면 임팩트가 훨씬 올라갑니다 -->
-<!-- ![screenshot](./docs/screenshot.png) -->
+<img width="1246" height="1435" alt="Personal Crypto Chart" src="https://github.com/user-attachments/assets/346e76f5-cffa-4f08-a2a1-7fddc38acd47" />
+
 
 ---
 
