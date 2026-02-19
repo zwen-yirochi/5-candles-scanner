@@ -44,16 +44,16 @@ export const TimeAxis: React.FC = () => {
 
   return (
     <div
-      className={`relative overflow-hidden bg-gradient-to-b from-gray-800 to-gray-900 border-t-2 border-gray-600
+      className={`relative overflow-hidden bg-[#F5F5F0] border-t border-gray-200
                 cursor-ew-resize select-none transition-colors ${
-                  isDragging ? 'bg-blue-900' : 'hover:from-gray-700 hover:to-gray-800'
+                  isDragging ? 'bg-[#EDEDEA]' : 'hover:bg-[#EFEFEA]'
                 }`}
       style={{ width, height: TIME_AXIS_HEIGHT }}
       onMouseDown={handleMouseDown}
     >
       <div className="absolute inset-x-0 flex items-center justify-center gap-1 top-2">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="w-1 h-1 bg-gray-500 rounded-full" />
+          <div key={i} className="w-1 h-1 bg-gray-300 rounded-full" />
         ))}
       </div>
 
@@ -63,16 +63,16 @@ export const TimeAxis: React.FC = () => {
           className="absolute bottom-1 flex flex-col items-center -translate-x-1/2"
           style={{ left: item.x }}
         >
-          <div className="w-px h-2 mb-1 bg-gray-500" />
-          <div className="px-2 py-0.5 text-xs font-mono text-gray-200 bg-gray-800 rounded whitespace-nowrap">
+          <div className="w-px h-2 mb-1 bg-gray-400" />
+          <div className="px-2 py-0.5 text-xs font-mono text-gray-500 whitespace-nowrap">
             {item.text}
           </div>
         </div>
       ))}
 
-      <div className="absolute w-px h-full bg-red-500 opacity-30" style={{ right: 0 }} />
+      <div className="absolute w-px h-full bg-gray-300 opacity-30" style={{ right: 0 }} />
 
-      <div className="absolute px-2 py-1 text-xs text-gray-400 bg-gray-900 rounded top-2 left-2">
+      <div className="absolute px-2 py-1 text-xs text-gray-500 bg-gray-200 rounded-full top-2 left-2">
         {interval} 간격
       </div>
     </div>

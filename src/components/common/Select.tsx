@@ -19,11 +19,11 @@ export const Select: React.FC<SelectProps> = ({ options, value, onChange, classN
         <select
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className={`px-3 py-2 font-bold text-white bg-transparent border-none cursor-pointer focus:outline-none ${className}`}
+            className={`px-3 py-2 font-bold text-gray-800 bg-transparent border-none cursor-pointer focus:outline-none ${className}`}
             {...props}
         >
             {options.map((option) => (
-                <option key={option.value} value={option.value} className="text-black">
+                <option key={option.value} value={option.value} className="text-gray-800 bg-white">
                     {option.label}
                 </option>
             ))}

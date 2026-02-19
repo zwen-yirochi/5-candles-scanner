@@ -16,7 +16,7 @@ export const CurrentPriceLine: React.FC = () => {
 
   return (
     <div className="absolute pointer-events-none" style={{ top: `${y}px`, left: 0, right: 0 }}>
-      <div className="absolute h-px bg-gray-300" style={{ width: '100%', opacity: 0.8 }} />
+      <div className="absolute" style={{ width: '100%', height: '1px', backgroundImage: 'repeating-linear-gradient(to right, #C8C8C8 0, #C8C8C8 4px, transparent 4px, transparent 8px)' }} />
     </div>
   );
 };

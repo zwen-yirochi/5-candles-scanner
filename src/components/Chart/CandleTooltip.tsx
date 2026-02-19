@@ -29,7 +29,7 @@ export const CandleTooltip: React.FC = () => {
   const changePercent = prevCandle ? ((candle.close - prevCandle.close) / prevCandle.close) * 100 : null;
 
   const isPositive = changePercent !== null && changePercent >= 0;
-  const changeColor = isPositive ? 'text-green-500' : 'text-red-500';
+  const changeColor = isPositive ? 'text-gray-800' : 'text-gray-400';
   const changeSymbol = isPositive ? '▲' : '▼';
 
   return (
@@ -40,9 +40,9 @@ export const CandleTooltip: React.FC = () => {
         top: position.y,
       }}
     >
-      <div className="bg-gray-900 border border-gray-600 rounded-lg shadow-lg p-2 text-xs text-white min-w-[140px]">
+      <div className="bg-white border border-gray-300 rounded-lg shadow-sm p-2 text-xs text-gray-700 min-w-[140px]">
         {/* Timestamp */}
-        <div className="pb-1 mb-1 text-gray-400 border-b border-gray-700">{formatTimestamp(candle.timestamp)}</div>
+        <div className="pb-1 mb-1 text-gray-400 border-b border-gray-100">{formatTimestamp(candle.timestamp)}</div>
 
         {/* OHLCV Data */}
         <div className="space-y-0.5">
@@ -70,7 +70,7 @@ export const CandleTooltip: React.FC = () => {
 
         {/* Change Percent */}
         {changePercent !== null && (
-          <div className={`border-t border-gray-700 pt-1 mt-1 ${changeColor} font-medium`}>
+          <div className={`border-t border-gray-100 pt-1 mt-1 ${changeColor} font-medium`}>
             {changeSymbol} {isPositive ? '+' : ''}
             {changePercent.toFixed(2)}%
           </div>

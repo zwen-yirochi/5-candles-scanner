@@ -6,7 +6,7 @@ import { SymbolBar } from './SymbolBar';
 
 export const ChartHeader: React.FC = () => {
   return (
-    <div className="p-4 text-white">
+    <div className="p-4 text-gray-800">
       <div className="flex gap-4 mb-6 ">
         <SymbolBar />
         <ConnectionStatus />

@@ -15,7 +15,7 @@ export const PriceInfo: React.FC = () => {
   if (!stats) return null;
 
   const { currentPrice, high, low, isPositive } = stats;
-  const priceColor = isPositive ? 'text-green-500' : 'text-red-500';
+  const priceColor = isPositive ? 'text-gray-800' : 'text-gray-400';
 
   return (
     <div className="flex items-start justify-between mb-6">

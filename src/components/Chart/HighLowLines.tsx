@@ -1,4 +1,4 @@
-// components/HighLowLines.tsx - 바이낸스 스타일 최고/최저 표시
+// components/HighLowLines.tsx - 최고/최저 표시 (라이트 테마)
 import { useAtomValue } from 'jotai';
 import React, { useMemo } from 'react';
 import { chartDimensionsAtom } from '../../stores/atoms/chartConfigAtoms';
@@ -57,25 +57,22 @@ export const HighLowLines: React.FC = () => {
   const isHighOnRight = highX > width / 2;
   const isLowOnRight = lowX > width / 2;
 
-  // 라인 길이 (차트 너비의 일정 비율)
   const lineLength = width * 0.3;
 
   return (
     <>
       {/* 최고가 L자 라인 */}
       <div className="absolute pointer-events-none" style={{ left: `${highX}px`, top: `${highY}px` }}>
-        {/* 수평선 */}
         <div
-          className="absolute h-px bg-gray-400"
+          className="absolute h-px bg-gray-300"
           style={{
             width: `${lineLength}px`,
             top: '0',
             [isHighOnRight ? 'right' : 'left']: '0',
           }}
         />
-        {/* 가격 라벨 */}
         <div
-          className="absolute px-2 py-1 font-mono text-xs text-white bg-gray-500 rounded whitespace-nowrap"
+          className="absolute px-2 py-1 font-mono text-xs text-gray-600 bg-white border border-gray-300 rounded whitespace-nowrap"
           style={{
             [isHighOnRight ? 'right' : 'left']: `${lineLength + 5}px`,
             top: '-12px',
@@ -86,18 +83,16 @@ export const HighLowLines: React.FC = () => {
       </div>
       {/* 최저가 L자 라인 */}
       <div className="absolute pointer-events-none" style={{ left: `${lowX}px`, top: `${lowY}px` }}>
-        {/* 수평선 */}
         <div
-          className="absolute h-px bg-gray-400"
+          className="absolute h-px bg-gray-300"
           style={{
             width: `${lineLength}px`,
             top: '0',
             [isLowOnRight ? 'right' : 'left']: '0',
           }}
         />
-        {/* 가격 라벨 */}
         <div
-          className="absolute px-2 py-1 font-mono text-xs text-white bg-gray-500 rounded whitespace-nowrap"
+          className="absolute px-2 py-1 font-mono text-xs text-gray-600 bg-white border border-gray-300 rounded whitespace-nowrap"
           style={{
             [isLowOnRight ? 'right' : 'left']: `${lineLength + 5}px`,
             top: '-12px',
