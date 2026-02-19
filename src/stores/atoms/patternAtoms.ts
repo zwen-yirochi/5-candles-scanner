@@ -1,11 +1,13 @@
-// stores/atoms/patternAtoms.ts
 import { atom } from 'jotai';
 import { CandleData } from '../../types/candle.types';
-import { PatternAnalyzer, TrendPattern } from '../../utils/patternAnalysis';
+import { DisplayZone, PatternSettings, PatternTimeFrame, PatternZone } from '../../types/pattern.types';
+import { PatternAnalyzer } from '../../utils/patternAnalysis';
+import { findIndexByTimestamp } from '../../utils/timestampMapping';
 import { rawDataAtom } from './dataAtoms';
-export type TimeFrame = '15m' | '30m' | '1h' | '4h';
 
-// 개별 타임프레임 데이터 atoms (독립적으로 업데이트 가능)
+export type TimeFrame = PatternTimeFrame;
+
+// ── 개별 타임프레임 데이터 atoms ──
 export const timeframeData15mAtom = atom<CandleData[]>([]);
 export const timeframeData30mAtom = atom<CandleData[]>([]);
 export const timeframeData1hAtom = atom<CandleData[]>([]);
@@ -47,86 +49,97 @@ export const timeframeDataAtom = atom(
   }
 );
 
-// 개별 타임프레임 패턴 atoms (해당 데이터 변경 시에만 재계산)
-const patternAtom15m = atom((get) => {
-  const data = get(timeframeData15mAtom);
-  return data.length > 0 ? PatternAnalyzer.findValidConsecutiveTrends(data, 5) : [];
-});
-const patternAtom30m = atom((get) => {
-  const data = get(timeframeData30mAtom);
-  return data.length > 0 ? PatternAnalyzer.findValidConsecutiveTrends(data, 5) : [];
-});
-const patternAtom1h = atom((get) => {
-  const data = get(timeframeData1hAtom);
-  return data.length > 0 ? PatternAnalyzer.findValidConsecutiveTrends(data, 5) : [];
-});
-const patternAtom4h = atom((get) => {
-  const data = get(timeframeData4hAtom);
-  return data.length > 0 ? PatternAnalyzer.findValidConsecutiveTrends(data, 5) : [];
+// ── 패턴 설정 ──
+export const patternSettingsAtom = atom<PatternSettings>({
+  enabled: true,
+  minLength: 5,
+  breakAction: 'cut',
+  maxZones: 200,
 });
 
-const patternAtomMap: Record<TimeFrame, typeof patternAtom15m> = {
-  '15m': patternAtom15m,
-  '30m': patternAtom30m,
-  '1h': patternAtom1h,
-  '4h': patternAtom4h,
-};
-
-// 합성 패턴 분석 atom (전체 읽기용)
-export const patternAnalysisAtom = atom<Record<TimeFrame, TrendPattern[]>>((get) => ({
-  '15m': get(patternAtom15m),
-  '30m': get(patternAtom30m),
-  '1h': get(patternAtom1h),
-  '4h': get(patternAtom4h),
-}));
-
+// ── TF별 on/off ──
 export const enabledPatternsAtom = atom<Record<TimeFrame, boolean>>({
   '15m': true,
-  '30m': false,
-  '1h': false,
-  '4h': false,
+  '30m': true,
+  '1h': true,
+  '4h': true,
 });
 
-// 현재 차트 타임프레임
-export const currentChartTimeframeAtom = atom<TimeFrame>('15m');
+// ── 개별 타임프레임 패턴 zone atoms (해당 데이터 변경 시에만 재계산) ──
+const patternZonesAtom15m = atom<PatternZone[]>((get) => {
+  const data = get(timeframeData15mAtom);
+  const settings = get(patternSettingsAtom);
+  return data.length > 0
+    ? PatternAnalyzer.analyzeZones(data, '15m', settings.minLength, settings.maxZones)
+    : [];
+});
+const patternZonesAtom30m = atom<PatternZone[]>((get) => {
+  const data = get(timeframeData30mAtom);
+  const settings = get(patternSettingsAtom);
+  return data.length > 0
+    ? PatternAnalyzer.analyzeZones(data, '30m', settings.minLength, settings.maxZones)
+    : [];
+});
+const patternZonesAtom1h = atom<PatternZone[]>((get) => {
+  const data = get(timeframeData1hAtom);
+  const settings = get(patternSettingsAtom);
+  return data.length > 0
+    ? PatternAnalyzer.analyzeZones(data, '1h', settings.minLength, settings.maxZones)
+    : [];
+});
+const patternZonesAtom4h = atom<PatternZone[]>((get) => {
+  const data = get(timeframeData4hAtom);
+  const settings = get(patternSettingsAtom);
+  return data.length > 0
+    ? PatternAnalyzer.analyzeZones(data, '4h', settings.minLength, settings.maxZones)
+    : [];
+});
 
-// 활성 패턴 표시 — 활성화된 타임프레임만 조건부 구독
-export const activeDisplayPatternsAtom = atom((get) => {
+const patternZonesAtomMap: Record<TimeFrame, typeof patternZonesAtom15m> = {
+  '15m': patternZonesAtom15m,
+  '30m': patternZonesAtom30m,
+  '1h': patternZonesAtom1h,
+  '4h': patternZonesAtom4h,
+};
+
+// ── 합성 패턴 분석 atom (전체 읽기용) ──
+export const patternAnalysisAtom = atom<Record<TimeFrame, PatternZone[]>>((get) => ({
+  '15m': get(patternZonesAtom15m),
+  '30m': get(patternZonesAtom30m),
+  '1h': get(patternZonesAtom1h),
+  '4h': get(patternZonesAtom4h),
+}));
+
+// ── displayZonesAtom: 4개 TF의 zone을 현재 차트 좌표로 매핑 ──
+export const displayZonesAtom = atom<DisplayZone[]>((get) => {
   const enabled = get(enabledPatternsAtom);
-  const currentChartData = get(rawDataAtom);
+  const settings = get(patternSettingsAtom);
+  const chartData = get(rawDataAtom);
 
-  if (currentChartData.length === 0) return [];
+  if (!settings.enabled || chartData.length === 0) return [];
 
-  const displayPatterns: Array<
-    TrendPattern & {
-      timeframe: TimeFrame;
-      mappedStartIndex: number;
-      mappedEndIndex: number;
-    }
-  > = [];
+  const displayZones: DisplayZone[] = [];
 
-  (Object.keys(enabled) as TimeFrame[]).forEach((patternTimeframe) => {
-    if (!enabled[patternTimeframe]) return;
+  (Object.keys(enabled) as TimeFrame[]).forEach((tf) => {
+    if (!enabled[tf]) return;
 
-    // 조건부 구독: 비활성화된 타임프레임은 get() 호출하지 않음
-    const patterns = get(patternAtomMap[patternTimeframe]);
-    const patternData = get(timeframeAtomMap[patternTimeframe]);
-    if (!patternData || patternData.length === 0) return;
+    // 조건부 구독: 비활성화된 TF는 get() 호출하지 않음
+    const zones = get(patternZonesAtomMap[tf]);
 
-    patterns.forEach((pattern) => {
-      const startTime = patternData[pattern.startIndex]?.timestamp;
-      const endTime = patternData[pattern.endIndex]?.timestamp;
+    zones.forEach((zone) => {
+      // breakAction이 delete이면 돌파된 zone 제외
+      if (settings.breakAction === 'delete' && !zone.isActive) return;
 
-      if (!startTime || !endTime) return;
+      const chartStartIndex = findIndexByTimestamp(chartData, zone.startTimestamp);
 
-      displayPatterns.push({
-        ...pattern,
-        timeframe: patternTimeframe,
-        mappedStartIndex: pattern.startIndex,
-        mappedEndIndex: pattern.endIndex,
-      });
+      let chartEndIndex: number | null = null;
+      if (!zone.isActive && zone.brokenAtTimestamp) {
+        chartEndIndex = findIndexByTimestamp(chartData, zone.brokenAtTimestamp);
+      }
+
+      displayZones.push({ zone, chartStartIndex, chartEndIndex });
     });
   });
 
-  return displayPatterns;
+  return displayZones;
 });
