@@ -6,6 +6,7 @@ import { visibleDataAtom } from '../stores/atoms/dataAtoms';
 import { chartDomainAtom } from '../stores/atoms/domainAtoms';
 import { chartRangeAtom } from '../stores/atoms/rangeAtoms';
 import { candleToPixels } from '../utils/domainToRange';
+import { getVisiblePriceLabels } from '../utils/priceLabel';
 
 export const useCandleCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -41,9 +42,24 @@ export const useCandleCanvas = () => {
       canvas.style.height = `${height}px`;
       ctx.scale(dpr, dpr);
 
+      // 1. 배경
       ctx.fillStyle = '#111827';
       ctx.fillRect(0, 0, width, height);
 
+      // 2. Grid Lines
+      const { labels } = getVisiblePriceLabels(domain.price.minPrice, domain.price.maxPrice, 10);
+      const priceRange = domain.price.maxPrice - domain.price.minPrice;
+      ctx.strokeStyle = '#374151';
+      ctx.lineWidth = 1;
+      labels.forEach((price) => {
+        const y = Math.round(height - ((price - domain.price.minPrice) / priceRange) * height) + 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      });
+
+      // 3. 캔들
       const risingCandles: Array<{
         x: number;
         y: number;
