@@ -56,13 +56,13 @@ export const Crosshair: React.FC = () => {
           {/* 수직선 */}
           <div
             className="absolute top-0 bottom-0 z-20 pointer-events-none"
-            style={{ left: `${mousePos.x}px`, width: '1px', background: '#D1D5DB', opacity: 0.6 }}
+            style={{ left: `${mousePos.x}px`, width: '1px', background: '#9CA3AF', opacity: 0.6 }}
           />
 
           {/* 수평선 */}
           <div
             className="absolute left-0 right-0 z-20 pointer-events-none"
-            style={{ top: `${mousePos.y}px`, height: '1px', background: '#D1D5DB', opacity: 0.6 }}
+            style={{ top: `${mousePos.y}px`, height: '1px', background: '#9CA3AF', opacity: 0.6 }}
           />
 
           {/* 가격 라벨 (우측) */}

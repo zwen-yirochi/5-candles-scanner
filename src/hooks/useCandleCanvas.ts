@@ -4,9 +4,12 @@ import { CANDLESTICK } from '../constants/chart.constants';
 import { chartDimensionsAtom } from '../stores/atoms/chartConfigAtoms';
 import { visibleDataAtom } from '../stores/atoms/dataAtoms';
 import { chartDomainAtom } from '../stores/atoms/domainAtoms';
+import { displayZonesAtom } from '../stores/atoms/patternAtoms';
 import { chartRangeAtom } from '../stores/atoms/rangeAtoms';
-import { candleToPixels } from '../utils/domainToRange';
+import { DisplayZone } from '../types/pattern.types';
+import { candleToPixels, indexToPixel, priceToPixel } from '../utils/domainToRange';
 import { getVisiblePriceLabels } from '../utils/priceLabel';
+import { TIMEFRAME_LABELS, ZONE_COLORS } from '../utils/timeframeColors';
 
 export const useCandleCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -16,6 +19,7 @@ export const useCandleCanvas = () => {
   const domain = useAtomValue(chartDomainAtom);
   const range = useAtomValue(chartRangeAtom);
   const { width, height } = useAtomValue(chartDimensionsAtom);
+  const displayZones = useAtomValue(displayZonesAtom);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -49,7 +53,7 @@ export const useCandleCanvas = () => {
       // 2. Grid Lines
       const { labels } = getVisiblePriceLabels(domain.price.minPrice, domain.price.maxPrice, 10);
       const priceRange = domain.price.maxPrice - domain.price.minPrice;
-      ctx.strokeStyle = '#E8E8E3';
+      ctx.strokeStyle = '#D5D5D0';
       ctx.lineWidth = 1;
       labels.forEach((price) => {
         const y = Math.round(height - ((price - domain.price.minPrice) / priceRange) * height) + 0.5;
@@ -59,7 +63,10 @@ export const useCandleCanvas = () => {
         ctx.stroke();
       });
 
-      // 3. 캔들 (pill body + wick)
+      // 3. Zone 영역 (캔들 뒤에 렌더링)
+      renderZones(ctx, displayZones, domain, range, width, height);
+
+      // 4. 캔들 (pill body + wick)
       const risingCandles: Array<{
         x: number;
         bodyY: number;
@@ -140,7 +147,77 @@ export const useCandleCanvas = () => {
         cancelAnimationFrame(rafIdRef.current);
       }
     };
-  }, [visibleData, domain, range, width, height]);
+  }, [visibleData, domain, range, width, height, displayZones]);
 
   return canvasRef;
 };
+
+function renderZones(
+  ctx: CanvasRenderingContext2D,
+  zones: DisplayZone[],
+  domain: { index: { startIndex: number; endIndex: number }; price: { minPrice: number; maxPrice: number } },
+  range: { width: number; height: number },
+  viewportWidth: number,
+  viewportHeight: number
+) {
+  if (zones.length === 0) return;
+
+  const visibleStart = domain.index.startIndex;
+  const visibleEnd = domain.index.endIndex;
+
+  // 15m→30m→1h→4h 순서로 렌더링 (4h가 가장 위)
+  const tfOrder: Array<'15m' | '30m' | '1h' | '4h'> = ['15m', '30m', '1h', '4h'];
+  const sorted = [...zones].sort((a, b) => {
+    return tfOrder.indexOf(a.zone.timeframe) - tfOrder.indexOf(b.zone.timeframe);
+  });
+
+  for (const dz of sorted) {
+    const { zone, chartStartIndex, chartEndIndex } = dz;
+
+    // zone 끝 인덱스: 활성이면 차트 오른쪽 끝, 돌파면 돌파 시점
+    const zoneEndIdx = chartEndIndex ?? visibleEnd + 5;
+
+    // 뷰포트 밖 zone 스킵
+    if (zoneEndIdx < visibleStart || chartStartIndex > visibleEnd) continue;
+
+    const colors = ZONE_COLORS[zone.timeframe];
+
+    // X 좌표
+    const x1 = Math.max(0, indexToPixel(chartStartIndex, domain.index, range));
+    const x2 = chartEndIndex !== null
+      ? Math.min(viewportWidth, indexToPixel(chartEndIndex, domain.index, range))
+      : viewportWidth;
+    const zoneWidth = x2 - x1;
+    if (zoneWidth <= 0) continue;
+
+    // Y 좌표
+    const y1 = priceToPixel(zone.zoneTop, domain.price, range);
+    const y2 = priceToPixel(zone.zoneBottom, domain.price, range);
+    const zoneHeight = Math.max(y2 - y1, 2); // 도지 캔들: 최소 2px
+
+    // 배경
+    ctx.fillStyle = zone.isActive ? colors.bg : colors.bgBroken;
+    ctx.fillRect(x1, y1, zoneWidth, zoneHeight);
+
+    // 테두리 (점선)
+    ctx.strokeStyle = zone.isActive ? colors.border : colors.bgBroken;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.strokeRect(x1 + 0.5, y1 + 0.5, zoneWidth - 1, zoneHeight - 1);
+    ctx.setLineDash([]);
+
+    // TF 라벨 — zone 높이가 14px 이상일 때만
+    if (zoneHeight >= 14) {
+      const visibleX1 = Math.max(x1, 0);
+      const visibleX2 = Math.min(x2, viewportWidth);
+      const labelX = visibleX1 + (visibleX2 - visibleX1) / 2;
+      const labelY = y1 + zoneHeight / 2;
+
+      ctx.fillStyle = colors.label;
+      ctx.font = '11px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(TIMEFRAME_LABELS[zone.timeframe], labelX, labelY);
+    }
+  }
+}

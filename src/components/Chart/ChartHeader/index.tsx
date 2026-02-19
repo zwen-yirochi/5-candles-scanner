@@ -1,4 +1,5 @@
 import React from 'react';
+import { PatternControlPanel } from '../PatternControlPanel';
 import { ConnectionStatus } from './ConnectionStatus';
 import { IntervalBar } from './IntervalBar';
 import { PriceInfo } from './PriceInfo';
@@ -12,7 +13,11 @@ export const ChartHeader: React.FC = () => {
         <ConnectionStatus />
       </div>
       <PriceInfo />
-      <IntervalBar />
+      <div className="flex items-center gap-4">
+        <IntervalBar />
+        <div className="w-px h-4 bg-neutral-300" />
+        <PatternControlPanel />
+      </div>
     </div>
   );
 };

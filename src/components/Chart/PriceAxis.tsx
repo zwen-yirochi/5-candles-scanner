@@ -75,9 +75,7 @@ export const PriceAxis: React.FC = () => {
     <div className="relative">
       <div
         className={`relative overflow-hidden bg-[#F5F5F0] border-l border-gray-200
-                cursor-ns-resize select-none transition-colors ${
-                  isDragging ? 'bg-[#EDEDEA]' : 'hover:bg-[#EFEFEA]'
-                }`}
+                cursor-ns-resize select-none transition-colors ${isDragging ? 'bg-[#EDEDEA]' : 'hover:bg-[#EFEFEA]'}`}
         style={{ width: axisWidth, height }}
         onMouseDown={handleMouseDown}
       >
@@ -88,7 +86,7 @@ export const PriceAxis: React.FC = () => {
           >
             <div className="w-2 h-px bg-gray-300" />
 
-            <div className="px-2 py-1 text-xs font-mono font-bold text-gray-800 rounded bg-gray-300">
+            <div className="px-2 py-1 font-mono text-xs font-bold text-gray-500 bg-gray-200 rounded">
               ${currentPriceData.label}
             </div>
           </div>
@@ -109,7 +107,7 @@ export const PriceAxis: React.FC = () => {
               style={{ top: `${item.y}px`, transform: 'translateY(-50%)' }}
             >
               {/* Grid Connection Line */}
-              <div className="w-2 h-px bg-gray-400" />
+              <div className="w-2 h-px bg-gray-200" />
               {/* Price */}
               <div className="px-2 py-0.5 text-xs font-mono text-gray-500">${item.label}</div>
             </div>
@@ -120,7 +118,7 @@ export const PriceAxis: React.FC = () => {
       {/* Auto Fit Button - Below the axis */}
       <button
         onClick={autoFit}
-        className="absolute w-full p-1 text-xs text-gray-600 transform -translate-x-1/2 bg-gray-300 rounded-b left-1/2 hover:bg-gray-400"
+        className="absolute w-full p-1 text-xs text-gray-500 transform -translate-x-1/2 bg-gray-200 rounded-b left-1/2 hover:bg-gray-300"
         style={{ top: `${height}px` }}
       >
         Auto Fit

@@ -1,185 +1,116 @@
-// utils/patternAnalysis.ts
 import { CandleData } from '../types/candle.types';
+import { PatternTimeFrame, PatternZone } from '../types/pattern.types';
 
-export interface TrendPattern {
-    type: 'bullish' | 'bearish';
-    startIndex: number;
-    endIndex: number;
-    length: number;
-    strength: number;
-    avgChange: number;
-    brokenAt?: number; // 돌파된 시점의 인덱스
-    isActive: boolean;
-}
-
+/**
+ * Pine Script 방식 패턴 분석기
+ *
+ * 1. 캔들 방향 판별: close > open → bullish, close < open → bearish, else → doji(0)
+ * 2. 연속 카운트: 같은 방향이면 count++, 다르면 리셋
+ * 3. 방향 전환 시점에 이전 연속이 minLen 이상이면 → zone 생성
+ * 4. zone 범위: 첫 번째 캔들의 몸통 (min(open,close) ~ max(open,close))
+ * 5. 매 캔들마다 기존 zone의 돌파 여부 검사
+ */
 export class PatternAnalyzer {
-    static findConsecutiveTrends(data: CandleData[], minLength: number = 5): TrendPattern[] {
-        const patterns: TrendPattern[] = [];
+  /**
+   * 연속 동일 방향 캔들 패턴을 찾고, 돌파 판정까지 수행하여 PatternZone[] 반환
+   */
+  static analyzeZones(
+    data: CandleData[],
+    timeframe: PatternTimeFrame,
+    minLength: number = 5,
+    maxZones: number = 200
+  ): PatternZone[] {
+    if (data.length < minLength) return [];
 
-        if (data.length < minLength) return patterns;
+    const zones: PatternZone[] = [];
 
-        let consecutiveCount = 1;
-        let currentType: 'bullish' | 'bearish' | null = null;
-        let sequenceStart = 0;
+    let consecutiveCount = 1;
+    let currentType: 'bullish' | 'bearish' | null = null;
+    let sequenceStart = 0;
 
-        // 첫 번째 캔들의 타입 결정
-        if (data[0].close > data[0].open) {
-            currentType = 'bullish';
-        } else if (data[0].close < data[0].open) {
-            currentType = 'bearish';
-        }
+    // 첫 캔들 방향
+    if (data[0].close > data[0].open) currentType = 'bullish';
+    else if (data[0].close < data[0].open) currentType = 'bearish';
 
-        for (let i = 1; i < data.length; i++) {
-            const candle = data[i];
-            const isBullish = candle.close > candle.open;
-            const isBearish = candle.close < candle.open;
+    for (let i = 1; i < data.length; i++) {
+      const candle = data[i];
+      let candleType: 'bullish' | 'bearish' | null = null;
+      if (candle.close > candle.open) candleType = 'bullish';
+      else if (candle.close < candle.open) candleType = 'bearish';
 
-            let candleType: 'bullish' | 'bearish' | null = null;
-            if (isBullish) candleType = 'bullish';
-            else if (isBearish) candleType = 'bearish';
-
-            if (candleType === currentType && candleType !== null) {
-                // 같은 타입이 연속됨
-                consecutiveCount++;
-            } else {
-                // 연속이 끊어짐 - 이전 시퀀스 확인
-                if (consecutiveCount >= minLength && currentType !== null) {
-                    patterns.push({
-                        type: currentType,
-                        startIndex: sequenceStart,
-                        endIndex: sequenceStart + consecutiveCount - 1,
-                        length: consecutiveCount,
-                        strength: 0,
-                        avgChange: 0,
-                        isActive: true,
-                    });
-                }
-
-                // 새 시퀀스 시작
-                currentType = candleType;
-                sequenceStart = i;
-                consecutiveCount = 1;
-            }
-        }
-
-        // 마지막 시퀀스 확인
+      if (candleType === currentType && candleType !== null) {
+        consecutiveCount++;
+      } else {
+        // 방향 전환 — 이전 시퀀스 확인
         if (consecutiveCount >= minLength && currentType !== null) {
-            patterns.push({
-                type: currentType,
-                startIndex: sequenceStart,
-                endIndex: sequenceStart + consecutiveCount - 1,
-                length: consecutiveCount,
-                strength: 0,
-                avgChange: 0,
-                isActive: true,
-            });
+          const firstCandle = data[sequenceStart];
+          const lastCandle = data[sequenceStart + consecutiveCount - 1];
+
+          zones.push({
+            id: `${timeframe}-${sequenceStart}`,
+            type: currentType,
+            timeframe,
+            startIndex: sequenceStart,
+            endIndex: sequenceStart + consecutiveCount - 1,
+            length: consecutiveCount,
+            startTimestamp: firstCandle.timestamp,
+            endTimestamp: lastCandle.timestamp,
+            zoneTop: Math.max(firstCandle.open, firstCandle.close),
+            zoneBottom: Math.min(firstCandle.open, firstCandle.close),
+            isActive: true,
+          });
         }
 
-        return patterns;
+        currentType = candleType;
+        sequenceStart = i;
+        consecutiveCount = 1;
+      }
     }
 
-    static isPatternBroken(data: CandleData[], pattern: TrendPattern): boolean {
-        const patternEndIndex = pattern.endIndex;
+    // 마지막 시퀀스
+    if (consecutiveCount >= minLength && currentType !== null) {
+      const firstCandle = data[sequenceStart];
+      const lastCandle = data[sequenceStart + consecutiveCount - 1];
 
-        // 패턴 이후 캔들들이 있는지 확인
-        if (patternEndIndex >= data.length - 1) {
-            return false; // 패턴 이후 캔들이 없으면 돌파 여부 알 수 없음
-        }
-
-        // 패턴 구간의 가격 범위 계산
-        let patternHigh = -Infinity;
-        let patternLow = Infinity;
-
-        for (let i = pattern.startIndex; i <= pattern.endIndex; i++) {
-            if (data[i]) {
-                patternHigh = Math.max(patternHigh, data[i].high);
-                patternLow = Math.min(patternLow, data[i].low);
-            }
-        }
-
-        // 패턴 이후의 모든 캔들 검사
-        for (let i = patternEndIndex + 1; i < data.length; i++) {
-            const candle = data[i];
-            if (!candle) continue;
-
-            if (pattern.type === 'bullish') {
-                // 상승 패턴: 지지선(패턴 최저가)을 종가가 하향 돌파하면 무효
-                if (candle.close < patternLow) {
-                    return true; // 돌파됨
-                }
-            } else {
-                // 하락 패턴: 저항선(패턴 최고가)을 종가가 상향 돌파하면 무효
-                if (candle.close > patternHigh) {
-                    return true; // 돌파됨
-                }
-            }
-        }
-
-        return false; // 돌파되지 않음
+      zones.push({
+        id: `${timeframe}-${sequenceStart}`,
+        type: currentType,
+        timeframe,
+        startIndex: sequenceStart,
+        endIndex: sequenceStart + consecutiveCount - 1,
+        length: consecutiveCount,
+        startTimestamp: firstCandle.timestamp,
+        endTimestamp: lastCandle.timestamp,
+        zoneTop: Math.max(firstCandle.open, firstCandle.close),
+        zoneBottom: Math.min(firstCandle.open, firstCandle.close),
+        isActive: true,
+      });
     }
 
-    // 유효한 패턴만 필터링하는 메서드
-    static findValidConsecutiveTrends(data: CandleData[], minLength: number = 5): TrendPattern[] {
-        const allPatterns = this.findConsecutiveTrends(data, minLength);
+    // 돌파 판정 — 패턴 이후 캔들의 종가로 판정
+    for (const zone of zones) {
+      for (let i = zone.endIndex + 1; i < data.length; i++) {
+        const candle = data[i];
+        if (!candle) continue;
 
-        return allPatterns.filter((pattern) => !this.isPatternBroken(data, pattern));
+        const isBroken =
+          zone.type === 'bullish'
+            ? candle.close < zone.zoneBottom // 지지 하향 돌파
+            : candle.close > zone.zoneTop; // 저항 상향 돌파
+
+        if (isBroken) {
+          zone.isActive = false;
+          zone.brokenAtTimestamp = candle.timestamp;
+          break;
+        }
+      }
     }
 
-    static findPatternsWithBreakInfo(data: CandleData[], minLength: number = 5): TrendPattern[] {
-        const allPatterns = this.findConsecutiveTrends(data, minLength);
-
-        return allPatterns.map((pattern) => {
-            const breakInfo = this.findBreakPoint(data, pattern);
-
-            return {
-                ...pattern,
-                brokenAt: breakInfo.brokenAt,
-                isActive: !breakInfo.isBroken,
-            };
-        });
+    // maxZones 제한: 최신 zone 우선 (뒤에서부터)
+    if (zones.length > maxZones) {
+      return zones.slice(zones.length - maxZones);
     }
 
-    // 돌파 시점을 찾는 메서드
-    static findBreakPoint(
-        data: CandleData[],
-        pattern: TrendPattern
-    ): {
-        isBroken: boolean;
-        brokenAt?: number;
-    } {
-        const patternEndIndex = pattern.endIndex;
-
-        if (patternEndIndex >= data.length - 1) {
-            return { isBroken: false };
-        }
-
-        // 패턴 구간의 가격 범위
-        let patternHigh = -Infinity;
-        let patternLow = Infinity;
-
-        for (let i = pattern.startIndex; i <= pattern.endIndex; i++) {
-            if (data[i]) {
-                patternHigh = Math.max(patternHigh, data[i].high);
-                patternLow = Math.min(patternLow, data[i].low);
-            }
-        }
-
-        // 패턴 이후 캔들들 검사
-        for (let i = patternEndIndex + 1; i < data.length; i++) {
-            const candle = data[i];
-            if (!candle) continue;
-
-            if (pattern.type === 'bullish') {
-                if (candle.close < patternLow) {
-                    return { isBroken: true, brokenAt: i };
-                }
-            } else {
-                if (candle.close > patternHigh) {
-                    return { isBroken: true, brokenAt: i };
-                }
-            }
-        }
-
-        return { isBroken: false };
-    }
+    return zones;
+  }
 }
