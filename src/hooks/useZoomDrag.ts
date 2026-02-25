@@ -24,6 +24,8 @@ export const useZoomDrag = ({ onZoom, sensitivity = 0.01, direction }: UseZoomDr
     const sensitivityRef = useRef(sensitivity);
     sensitivityRef.current = sensitivity;
 
+    // ━━━ 마우스 핸들러 (기존) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
     const handleMouseDown = useCallback(
         (e: React.MouseEvent) => {
             e.preventDefault();
@@ -65,21 +67,74 @@ export const useZoomDrag = ({ onZoom, sensitivity = 0.01, direction }: UseZoomDr
         }
     }, [setGlobalDragging]);
 
+    // ━━━ 터치 핸들러 (신규) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    const handleTouchStart = useCallback(
+        (e: React.TouchEvent) => {
+            if (e.touches.length !== 1) return;
+            // preventDefault 불필요: touchAction: 'none' CSS가 브라우저 기본 동작 방지
+            isDraggingRef.current = true;
+            setIsDragging(true);
+            setGlobalDragging(true);
+            const touch = e.touches[0];
+            dragStartRef.current = direction === 'horizontal' ? touch.clientX : touch.clientY;
+        },
+        [direction, setGlobalDragging]
+    );
+
+    const handleTouchMove = useCallback(
+        (e: TouchEvent) => {
+            if (!isDraggingRef.current || e.touches.length !== 1) return;
+
+            if (rafIdRef.current !== null) return;
+
+            rafIdRef.current = requestAnimationFrame(() => {
+                rafIdRef.current = null;
+
+                const touch = e.touches[0];
+                const currentPos = direction === 'horizontal' ? touch.clientX : touch.clientY;
+                const delta = currentPos - dragStartRef.current;
+                const zoomFactor = 1 + delta * sensitivityRef.current;
+
+                onZoomRef.current(zoomFactor);
+                dragStartRef.current = currentPos;
+            });
+        },
+        [direction]
+    );
+
+    const handleTouchEnd = useCallback(() => {
+        isDraggingRef.current = false;
+        setIsDragging(false);
+        setGlobalDragging(false);
+        if (rafIdRef.current !== null) {
+            cancelAnimationFrame(rafIdRef.current);
+            rafIdRef.current = null;
+        }
+    }, [setGlobalDragging]);
+
+    // ━━━ 글로벌 리스너 등록 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
     useEffect(() => {
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseup', handleMouseUp);
+        window.addEventListener('touchmove', handleTouchMove, { passive: false });
+        window.addEventListener('touchend', handleTouchEnd);
 
         return () => {
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('touchmove', handleTouchMove);
+            window.removeEventListener('touchend', handleTouchEnd);
             if (rafIdRef.current !== null) {
                 cancelAnimationFrame(rafIdRef.current);
             }
         };
-    }, [handleMouseMove, handleMouseUp]);
+    }, [handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
     return {
         isDragging,
         handleMouseDown,
+        handleTouchStart,
     };
 };
