@@ -21,11 +21,18 @@ export const intervalMsAtom = atom((get) => {
 
 export const containerSizeAtom = atom({ width: 0, height: 0 });
 
+// 모바일(640px 미만): 60px, 데스크탑: 80px
+export const axisWidthAtom = atom((get) => {
+  const { width } = get(containerSizeAtom);
+  return width < 640 ? 60 : CHART_DIMENSIONS.AXIS_WIDTH;
+});
+
 export const chartDimensionsAtom = atom((get) => {
   const { width, height } = get(containerSizeAtom);
-  const padding = 32;
+  const axisWidth = get(axisWidthAtom);
+  const padding = width < 640 ? 0 : 32;
   return {
-    width: Math.max(0, width - padding - CHART_DIMENSIONS.AXIS_WIDTH),
+    width: Math.max(0, width - padding - axisWidth),
     height: Math.max(0, height - padding - CHART_DIMENSIONS.AXIS_HEIGHT),
   };
 });
