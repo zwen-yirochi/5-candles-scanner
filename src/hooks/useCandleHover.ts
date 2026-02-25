@@ -7,7 +7,6 @@ import { chartRangeAtom } from '../stores/atoms/rangeAtoms';
 import { indexToPixel, pixelToIndex, priceToPixel } from '../utils/domainToRange';
 
 const HOVER_DELAY = 500;
-const TOUCH_END_DELAY = 2000;
 const TOOLTIP_OFFSET = 10;
 
 const TOOLTIP_DIMENSIONS = {
@@ -53,22 +52,12 @@ export const useCandleHover = (containerRef: RefObject<HTMLDivElement | null>) =
 
   const isShowingRef = useRef(false);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const touchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const touchEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentIndexRef = useRef<number | null>(null);
 
   const clearTimers = useCallback(() => {
     if (hoverTimerRef.current) {
       clearTimeout(hoverTimerRef.current);
       hoverTimerRef.current = null;
-    }
-    if (touchTimerRef.current) {
-      clearTimeout(touchTimerRef.current);
-      touchTimerRef.current = null;
-    }
-    if (touchEndTimerRef.current) {
-      clearTimeout(touchEndTimerRef.current);
-      touchEndTimerRef.current = null;
     }
   }, []);
 
@@ -147,54 +136,8 @@ export const useCandleHover = (containerRef: RefObject<HTMLDivElement | null>) =
     hideTooltip();
   }, [hideTooltip]);
 
-  const handleTouchStart = useCallback(
-    (e: React.TouchEvent) => {
-      if (isDragging || !containerRef.current) return;
-
-      const chartRect = containerRef.current.getBoundingClientRect();
-      const touch = e.touches[0];
-      const touchX = touch.clientX - chartRect.left;
-      const candleIndex = pixelToIndex(touchX, domain.index, range);
-
-      // 인덱스 범위 체크
-      if (candleIndex < 0 || candleIndex >= data.length) {
-        return;
-      }
-
-      currentIndexRef.current = candleIndex;
-
-      clearTimers();
-
-      touchTimerRef.current = setTimeout(() => {
-        showTooltip(candleIndex);
-      }, HOVER_DELAY);
-    },
-    [isDragging, containerRef, domain.index, range, data.length, clearTimers, showTooltip]
-  );
-
-  const handleTouchMove = useCallback(() => {
-    // 터치 이동 시 타이머 취소 (드래그로 판단)
-    clearTimers();
-    if (isShowingRef.current) {
-      hideTooltip();
-    }
-  }, [clearTimers, hideTooltip]);
-
-  const handleTouchEnd = useCallback(() => {
-    clearTimers();
-    // 툴팁이 표시된 상태에서 터치 종료 시 잠시 후 숨김
-    if (isShowingRef.current) {
-      touchEndTimerRef.current = setTimeout(() => {
-        hideTooltip();
-      }, TOUCH_END_DELAY);
-    }
-  }, [clearTimers, hideTooltip]);
-
   return {
     handleMouseMove,
     handleMouseLeave,
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
   };
 };
