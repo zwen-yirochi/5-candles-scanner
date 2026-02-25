@@ -8,10 +8,10 @@ export const ConnectionStatus: React.FC = () => {
   return (
     <div className="flex items-center gap-2">
       <div
-        className={`w-2 h-2 rounded-full ${isConnected ? 'bg-gray-800' : 'bg-gray-300'}`}
+        className={`w-3 h-3 rounded-full ${isConnected ? 'bg-gray-800' : 'bg-gray-300'}`}
         title={isConnected ? 'WebSocket 연결됨' : 'WebSocket 연결 안됨'}
       />
-      <span className="text-xs text-gray-400">{isConnected ? 'Live' : 'Offline'}</span>
+      <span className="text-xs sm:text-sm text-gray-400">{isConnected ? 'Live' : 'Offline'}</span>
     </div>
   );
 };

@@ -22,9 +22,9 @@ export const Button: React.FC<ButtonProps> = ({
     };
 
     const sizeStyles = {
-        sm: 'px-3 py-1 text-sm',
-        md: 'px-4 py-2 text-base',
-        lg: 'px-6 py-3 text-lg',
+        sm: 'px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm min-h-[36px] sm:min-h-[44px] min-w-[36px] sm:min-w-[44px]',
+        md: 'px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base min-h-[36px] sm:min-h-[44px] min-w-[36px] sm:min-w-[44px]',
+        lg: 'px-4 sm:px-6 py-2.5 sm:py-3 text-base sm:text-lg min-h-[44px]',
     };
 
     return (

@@ -26,7 +26,7 @@ export const CandlestickChart: React.FC = () => {
   if (loading) return null;
 
   return (
-    <div className="w-full p-4">
+    <div className="w-full sm:p-4">
       <div className="flex">
         <div>
           <ChartErrorBoundary>

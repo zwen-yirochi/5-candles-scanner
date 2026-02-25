@@ -18,22 +18,22 @@ export const PriceInfo: React.FC = () => {
   const priceColor = isPositive ? 'text-gray-800' : 'text-gray-400';
 
   return (
-    <div className="flex items-start justify-between mb-6">
+    <div className="flex items-start justify-between mb-3 sm:mb-6">
       <div>
-        <div className="mb-1 text-sm text-gray-400">Last Traded Price</div>
-        <div className={`text-4xl font-bold mb-1 ${priceColor}`}>{formatPrice(currentPrice)}</div>
-        <div className="text-sm text-gray-400">Mark Price {formatPrice(currentPrice)}</div>
+        <div className="mb-0.5 sm:mb-1 text-xs sm:text-sm text-gray-400">Last Traded Price</div>
+        <div className={`text-2xl sm:text-4xl font-bold mb-0.5 sm:mb-1 ${priceColor}`}>{formatPrice(currentPrice)}</div>
+        <div className="text-xs sm:text-sm text-gray-400">Mark Price {formatPrice(currentPrice)}</div>
       </div>
 
       <div className="text-right">
-        <div className="flex gap-12">
+        <div className="flex gap-4 sm:gap-12">
           <div>
-            <div className="mb-1 text-sm text-gray-400">24h High</div>
-            <div className="text-base font-semibold">{formatPrice(high)}</div>
+            <div className="mb-0.5 sm:mb-1 text-xs sm:text-sm text-gray-400">24h High</div>
+            <div className="text-sm sm:text-base font-semibold">{formatPrice(high)}</div>
           </div>
           <div>
-            <div className="mb-1 text-sm text-gray-400">24h Low</div>
-            <div className="text-base font-semibold">{formatPrice(low)}</div>
+            <div className="mb-0.5 sm:mb-1 text-xs sm:text-sm text-gray-400">24h Low</div>
+            <div className="text-sm sm:text-base font-semibold">{formatPrice(low)}</div>
           </div>
         </div>
       </div>

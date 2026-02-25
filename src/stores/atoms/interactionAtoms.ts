@@ -21,3 +21,17 @@ export const hoveredCandleAtom = atom<HoveredCandleState | null>(null);
 export const tooltipVisibleAtom = atom((get) => {
   return get(hoveredCandleAtom) !== null && !get(isDraggingAtom);
 });
+
+// ━━━ 크로스헤어 위치 (마우스/터치 통합) ━━━━━━━━━━━━━━━━━━━━━
+// 소스: Crosshair (마우스), useTouchGestures (터치 롱프레스)
+// 소비: Crosshair 컴포넌트 (렌더링)
+export interface CrosshairPosition {
+  x: number;
+  y: number;
+  source: 'mouse' | 'touch';
+}
+export const crosshairPositionAtom = atom<CrosshairPosition | null>(null);
+
+// ━━━ 크로스헤어 활성 상태 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 터치 롱프레스 크로스헤어 활성 중에는 팬 동작을 억제
+export const isCrosshairActiveAtom = atom(false);

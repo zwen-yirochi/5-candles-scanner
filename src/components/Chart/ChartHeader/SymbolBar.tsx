@@ -9,7 +9,7 @@ export const SymbolBar: React.FC = () => {
   const [symbol, setSymbol] = useAtom(symbolAtom);
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-2 sm:gap-4">
       <Select options={CHART_SYMBOLS} value={symbol} onChange={setSymbol} />
       <PriceChange />
     </div>

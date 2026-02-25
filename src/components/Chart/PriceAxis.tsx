@@ -1,15 +1,15 @@
 import { useAtom, useAtomValue } from 'jotai';
 import React, { useMemo } from 'react';
-import { AXIS, CHART_DIMENSIONS } from '../../constants/chart.constants';
+import { AXIS } from '../../constants/chart.constants';
 import { useZoomDrag } from '../../hooks/useZoomDrag';
-import { chartDimensionsAtom } from '../../stores/atoms/chartConfigAtoms';
+import { axisWidthAtom, chartDimensionsAtom } from '../../stores/atoms/chartConfigAtoms';
 import { currentPriceAtom, visibleDataAtom } from '../../stores/atoms/dataAtoms';
 import { priceDomainAtom } from '../../stores/atoms/domainAtoms';
 import { formatPrice, getVisiblePriceLabels } from '../../utils/priceLabel';
 
 export const PriceAxis: React.FC = () => {
   const { height } = useAtomValue(chartDimensionsAtom);
-  const axisWidth = CHART_DIMENSIONS.AXIS_WIDTH;
+  const axisWidth = useAtomValue(axisWidthAtom);
   const currentPrice = useAtomValue(currentPriceAtom);
   const [priceDomain, setPriceDomain] = useAtom(priceDomainAtom);
   const visibleData = useAtomValue(visibleDataAtom);
@@ -52,7 +52,7 @@ export const PriceAxis: React.FC = () => {
     });
   };
 
-  const { isDragging, handleMouseDown } = useZoomDrag({
+  const { isDragging, handleMouseDown, handleTouchStart } = useZoomDrag({
     onZoom: handleZoom,
     sensitivity: AXIS.PRICE.ZOOM_SENSITIVITY,
     direction: 'vertical',
@@ -71,45 +71,47 @@ export const PriceAxis: React.FC = () => {
     });
   };
 
+  const isNarrow = axisWidth < 80;
+
   return (
     <div className="relative">
       <div
-        className={`relative overflow-hidden bg-[#F5F5F0] border-l border-gray-200
+        className={`relative overflow-visible bg-[#F5F5F0] border-l border-gray-200
                 cursor-ns-resize select-none transition-colors ${isDragging ? 'bg-[#EDEDEA]' : 'hover:bg-[#EFEFEA]'}`}
-        style={{ width: axisWidth, height }}
+        style={{ width: axisWidth, height, touchAction: 'none' }}
         onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
       >
         {currentPriceData && (
           <div
-            className="absolute left-0 z-10 flex items-center "
+            className="absolute left-0 z-10 flex items-center"
             style={{ top: `${currentPriceData.y}px`, transform: 'translateY(-50%)' }}
           >
-            <div className="w-2 h-px bg-gray-300" />
-
-            <div className="px-2 py-1 font-mono text-xs font-bold text-gray-500 bg-gray-200 rounded">
+            <div className="w-1 h-px bg-gray-300" />
+            <div className={`${isNarrow ? 'px-0.5 text-[10px]' : 'px-2 text-xs'} py-0.5 font-mono font-bold text-gray-500 bg-gray-200 rounded`}>
               ${currentPriceData.label}
             </div>
           </div>
         )}
         {/* Drag Indicator */}
-        <div className="absolute inset-y-0 flex flex-col items-center justify-center gap-1 left-2">
+        <div className={`absolute inset-y-0 flex flex-col items-center justify-center gap-1 ${isNarrow ? 'left-0.5' : 'left-2'}`}>
           {[...Array(3)].map((_, i) => (
             <div key={i} className="w-1 h-1 bg-gray-300 rounded-full" />
           ))}
         </div>
 
         {/* Price Labels */}
-        <div className="absolute inset-0 pl-6">
+        <div className={`absolute inset-0 ${isNarrow ? 'pl-3' : 'pl-6'}`}>
           {labelData.map((item) => (
             <div
               key={item.price}
-              className="absolute left-0 flex items-center gap-2"
+              className="absolute left-0 flex items-center gap-1"
               style={{ top: `${item.y}px`, transform: 'translateY(-50%)' }}
             >
-              {/* Grid Connection Line */}
-              <div className="w-2 h-px bg-gray-200" />
-              {/* Price */}
-              <div className="px-2 py-0.5 text-xs font-mono text-gray-500">${item.label}</div>
+              <div className="w-1 h-px bg-gray-200" />
+              <div className={`${isNarrow ? 'px-0.5 text-[10px]' : 'px-2 text-xs'} py-0.5 font-mono text-gray-500 whitespace-nowrap`}>
+                ${item.label}
+              </div>
             </div>
           ))}
         </div>
@@ -118,7 +120,7 @@ export const PriceAxis: React.FC = () => {
       {/* Auto Fit Button - Below the axis */}
       <button
         onClick={autoFit}
-        className="absolute w-full p-1 text-xs text-gray-500 transform -translate-x-1/2 bg-gray-200 rounded-b left-1/2 hover:bg-gray-300"
+        className={`absolute w-full p-1 ${isNarrow ? 'text-[10px]' : 'text-xs'} text-gray-500 transform -translate-x-1/2 bg-gray-200 rounded-b left-1/2 hover:bg-gray-300`}
         style={{ top: `${height}px` }}
       >
         Auto Fit

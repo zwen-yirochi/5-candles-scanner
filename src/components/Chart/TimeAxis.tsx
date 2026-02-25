@@ -36,7 +36,7 @@ export const TimeAxis: React.FC = () => {
     });
   };
 
-  const { isDragging, handleMouseDown } = useZoomDrag({
+  const { isDragging, handleMouseDown, handleTouchStart } = useZoomDrag({
     onZoom: handleZoom,
     sensitivity: 0.01,
     direction: 'horizontal',
@@ -48,8 +48,9 @@ export const TimeAxis: React.FC = () => {
                 cursor-ew-resize select-none transition-colors ${
                   isDragging ? 'bg-[#EDEDEA]' : 'hover:bg-[#EFEFEA]'
                 }`}
-      style={{ width, height: TIME_AXIS_HEIGHT }}
+      style={{ width, height: TIME_AXIS_HEIGHT, touchAction: 'none' }}
       onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
     >
       <div className="absolute inset-x-0 flex items-center justify-center gap-1 top-2">
         {[...Array(3)].map((_, i) => (
