@@ -54,7 +54,7 @@ export const AXIS = {
   PRICE: {
     LABEL_COUNT: 5,
     MIN_RANGE: 100,
-    ZOOM_SENSITIVITY: 0.01,
+    ZOOM_SENSITIVITY: 0.005,
   },
 
   TIME: {
