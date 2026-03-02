@@ -201,8 +201,11 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
         const deltaY = touch.clientY - lastTouchPosRef.current.y;
 
         if (crosshairPosRef.current) {
-          const newX = crosshairPosRef.current.x + deltaX;
-          const newY = crosshairPosRef.current.y + deltaY;
+          const rect = containerRef.current?.getBoundingClientRect();
+          const maxX = rect ? rect.width : Infinity;
+          const maxY = rect ? rect.height : Infinity;
+          const newX = Math.max(0, Math.min(maxX, crosshairPosRef.current.x + deltaX));
+          const newY = Math.max(0, Math.min(maxY, crosshairPosRef.current.y + deltaY));
           crosshairPosRef.current = { x: newX, y: newY };
           setCrosshairPosition({ x: newX, y: newY, source: 'touch' });
         }

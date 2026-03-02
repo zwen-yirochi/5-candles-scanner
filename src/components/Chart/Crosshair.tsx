@@ -91,19 +91,6 @@ export const Crosshair: React.FC = () => {
             </div>
           )}
 
-          {/* 터치 인디케이터 (터치 소스일 때만 표시) */}
-          {crosshairPos.source === 'touch' && (
-            <div
-              className="absolute z-20 rounded-full pointer-events-none border-2 border-gray-400"
-              style={{
-                left: `${crosshairPos.x - 20}px`,
-                top: `${crosshairPos.y - 20}px`,
-                width: '40px',
-                height: '40px',
-                opacity: 0.4,
-              }}
-            />
-          )}
         </>
       )}
     </>
