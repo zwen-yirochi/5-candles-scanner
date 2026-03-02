@@ -53,6 +53,17 @@ export const Crosshair: React.FC = () => {
     return priceDomain.maxPrice - (y / height) * range;
   };
 
+  const formatPrice = (price: number): string => {
+    const fixed = price.toFixed(2);
+    const [int, dec] = fixed.split('.');
+    let result = '';
+    for (let i = int.length - 1, count = 0; i >= 0; i--, count++) {
+      if (count > 0 && count % 3 === 0) result = ',' + result;
+      result = int[i] + result;
+    }
+    return result + '.' + dec;
+  };
+
   const pixelToTime = (x: number): string => {
     const indexRange = indexDomain.endIndex - indexDomain.startIndex;
     const relativeIndex = (x / width) * indexRange;
@@ -60,12 +71,12 @@ export const Crosshair: React.FC = () => {
 
     if (hoveredIndex >= 0 && hoveredIndex < visibleData.length) {
       const candle = visibleData[hoveredIndex];
-      return new Date(candle.timestamp).toLocaleString('ko-KR', {
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      const date = new Date(candle.timestamp);
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${month}/${day} ${hours}:${minutes}`;
     }
     return '';
   };
@@ -97,7 +108,7 @@ export const Crosshair: React.FC = () => {
             className="absolute right-0 z-20 px-1 sm:px-2 py-0.5 sm:py-1 font-mono text-[10px] sm:text-xs text-gray-600 transform -translate-y-1/2 bg-white border border-gray-300 rounded pointer-events-none"
             style={{ top: `${crosshairPos.y}px` }}
           >
-            ${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ${formatPrice(currentPrice)}
           </div>
 
           {/* 시간 라벨 (하단) */}
