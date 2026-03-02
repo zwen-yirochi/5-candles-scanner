@@ -129,7 +129,12 @@ export const useChartPanZoom = () => {
       lastWheelTimeRef.current = now;
 
       const factor = e.deltaY > 0 ? 1.1 : 0.9;
-      zoomX(factor);
+
+      // 마우스 위치 기반 anchor 계산
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const anchor = (e.clientX - rect.left) / rect.width;
+
+      zoomX({ factor, anchor });
     },
     [zoomX],
   );

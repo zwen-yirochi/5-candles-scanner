@@ -11,9 +11,8 @@ import { chartRangeAtom } from '../stores/atoms/rangeAtoms';
 
 type GestureState = 'idle' | 'pending' | 'panning' | 'crosshair' | 'pinching';
 
-const LONG_PRESS_DELAY = 500;
+const TAP_THRESHOLD = 10; // 탭으로 인정할 최대 이동 거리 (px)
 const PAN_THRESHOLD = 5;
-const CROSSHAIR_LINGER_DELAY = 1500;
 
 function getDistance(t1: { clientX: number; clientY: number }, t2: { clientX: number; clientY: number }): number {
   const dx = t1.clientX - t2.clientX;
@@ -32,12 +31,13 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
   const zoomX = useSetAtom(zoomXAtom);
   const setIsDragging = useSetAtom(isDraggingAtom);
   const setCrosshairPosition = useSetAtom(crosshairPositionAtom);
-  const setIsCrosshairActive = useSetAtom(isCrosshairActiveAtom);
+  const [isCrosshairActive, setIsCrosshairActive] = useAtom(isCrosshairActiveAtom);
 
   // Ref-sync pattern (동일: useChartPanZoom)
   const indexDomainRef = useRef(indexDomain);
   const priceDomainRef = useRef(priceDomain);
   const rangeRef = useRef(range);
+  const isCrosshairActiveRef = useRef(isCrosshairActive);
 
   useEffect(() => {
     indexDomainRef.current = indexDomain;
@@ -45,48 +45,32 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
     rangeRef.current = range;
   }, [indexDomain, priceDomain, range]);
 
+  useEffect(() => {
+    isCrosshairActiveRef.current = isCrosshairActive;
+  }, [isCrosshairActive]);
+
   // 제스처 상태
   const gestureStateRef = useRef<GestureState>('idle');
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lingerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartPosRef = useRef({ x: 0, y: 0 });
   const lastTouchPosRef = useRef({ x: 0, y: 0 });
   const pinchStartDistRef = useRef(0);
   const rafIdRef = useRef<number | null>(null);
 
-  const clearLongPressTimer = useCallback(() => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  }, []);
-
-  const clearLingerTimer = useCallback(() => {
-    if (lingerTimerRef.current) {
-      clearTimeout(lingerTimerRef.current);
-      lingerTimerRef.current = null;
-    }
-  }, []);
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      clearLongPressTimer();
-      clearLingerTimer();
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
     };
-  }, [clearLongPressTimer, clearLingerTimer]);
+  }, []);
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
       // preventDefault 불필요: touchAction: 'none' CSS가 브라우저 기본 동작 방지
-      clearLingerTimer();
 
       const touchCount = e.touches.length;
 
       // 2손가락: 핀치 시작 (진행 중 제스처 전환 포함)
       if (touchCount === 2) {
-        clearLongPressTimer();
         if (gestureStateRef.current === 'panning') {
           setIsDragging(false);
         }
@@ -99,39 +83,31 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
         return;
       }
 
-      // 1손가락: PENDING 상태로 전환
+      // 1손가락
       if (touchCount === 1) {
         const touch = e.touches[0];
         touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
         lastTouchPosRef.current = { x: touch.clientX, y: touch.clientY };
-        gestureStateRef.current = 'pending';
 
-        // 롱프레스 타이머 (500ms)
-        longPressTimerRef.current = setTimeout(() => {
-          if (gestureStateRef.current === 'pending') {
-            gestureStateRef.current = 'crosshair';
-            setIsCrosshairActive(true);
-
-            const rect = containerRef.current?.getBoundingClientRect();
-            if (rect) {
-              setCrosshairPosition({
-                x: touchStartPosRef.current.x - rect.left,
-                y: touchStartPosRef.current.y - rect.top,
-                source: 'touch',
-              });
-            }
-
-            if (navigator.vibrate) navigator.vibrate(50);
+        if (isCrosshairActiveRef.current) {
+          // 크로스헤어 활성 상태: 바로 crosshair 모드로, 위치 업데이트
+          gestureStateRef.current = 'crosshair';
+          const rect = containerRef.current?.getBoundingClientRect();
+          if (rect) {
+            setCrosshairPosition({
+              x: touch.clientX - rect.left,
+              y: touch.clientY - rect.top,
+              source: 'touch',
+            });
           }
-        }, LONG_PRESS_DELAY);
+        } else {
+          gestureStateRef.current = 'pending';
+        }
       }
     },
     [
       containerRef,
-      clearLongPressTimer,
-      clearLingerTimer,
       setIsDragging,
-      setIsCrosshairActive,
       setCrosshairPosition,
     ],
   );
@@ -149,7 +125,6 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
         const dy = touch.clientY - touchStartPosRef.current.y;
 
         if (Math.sqrt(dx * dx + dy * dy) > PAN_THRESHOLD) {
-          clearLongPressTimer();
           gestureStateRef.current = 'panning';
           setIsDragging(true);
         }
@@ -230,13 +205,21 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
         const t2 = e.touches[1];
         const currentDist = getDistance(t1, t2);
 
+        // 핀치 중심점 계산
+        const centerX = (t1.clientX + t2.clientX) / 2;
+
         rafIdRef.current = requestAnimationFrame(() => {
           rafIdRef.current = null;
 
           const scaleFactor = pinchStartDistRef.current / currentDist;
           // > 1: 손가락 오므림 = 축소, < 1: 손가락 벌림 = 확대
           const clampedFactor = Math.max(0.8, Math.min(1.2, scaleFactor));
-          zoomX(clampedFactor);
+
+          // 핀치 중심을 anchor로 사용
+          const rect = containerRef.current?.getBoundingClientRect();
+          const anchor = rect ? (centerX - rect.left) / rect.width : 0.5;
+
+          zoomX({ factor: clampedFactor, anchor });
 
           pinchStartDistRef.current = currentDist;
         });
@@ -245,7 +228,6 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
     },
     [
       containerRef,
-      clearLongPressTimer,
       setIsDragging,
       setIndexDomain,
       setPriceDomain,
@@ -259,19 +241,40 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
       const state = gestureStateRef.current;
 
       if (state === 'pending') {
-        clearLongPressTimer();
+        // 이동 없이 손 뗌 = 탭 → 크로스헤어 활성화
+        const touch = e.changedTouches[0];
+        const dx = touch.clientX - touchStartPosRef.current.x;
+        const dy = touch.clientY - touchStartPosRef.current.y;
+
+        if (Math.sqrt(dx * dx + dy * dy) < TAP_THRESHOLD) {
+          setIsCrosshairActive(true);
+          const rect = containerRef.current?.getBoundingClientRect();
+          if (rect) {
+            setCrosshairPosition({
+              x: touch.clientX - rect.left,
+              y: touch.clientY - rect.top,
+              source: 'touch',
+            });
+          }
+        }
+      }
+
+      if (state === 'crosshair') {
+        // 크로스헤어 모드에서 손 뗌 → 탭이었으면 비활성화, 이동이었으면 유지
+        const touch = e.changedTouches[0];
+        const dx = touch.clientX - touchStartPosRef.current.x;
+        const dy = touch.clientY - touchStartPosRef.current.y;
+
+        if (Math.sqrt(dx * dx + dy * dy) < TAP_THRESHOLD) {
+          // 탭 = 비활성화
+          setIsCrosshairActive(false);
+          setCrosshairPosition(null);
+        }
+        // 이동이었으면 크로스헤어 유지 (위치는 마지막 위치에 고정)
       }
 
       if (state === 'panning') {
         setIsDragging(false);
-      }
-
-      if (state === 'crosshair') {
-        setIsCrosshairActive(false);
-        // 크로스헤어를 잠시 유지 후 제거
-        lingerTimerRef.current = setTimeout(() => {
-          setCrosshairPosition(null);
-        }, CROSSHAIR_LINGER_DELAY);
       }
 
       if (state === 'pinching') {
@@ -286,7 +289,7 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
       gestureStateRef.current = 'idle';
     },
     [
-      clearLongPressTimer,
+      containerRef,
       setIsDragging,
       setIsCrosshairActive,
       setCrosshairPosition,
