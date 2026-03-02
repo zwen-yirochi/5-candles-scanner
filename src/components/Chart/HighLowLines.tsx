@@ -72,7 +72,7 @@ export const HighLowLines: React.FC = () => {
           }}
         />
         <div
-          className="absolute px-2 py-1 font-mono text-xs text-gray-600 bg-white border border-gray-300 rounded whitespace-nowrap"
+          className="absolute px-2 py-1 font-mono text-xs text-gray-600 bg-gray-500/20 backdrop-blur-sm rounded whitespace-nowrap"
           style={{
             [isHighOnRight ? 'right' : 'left']: `${lineLength + 5}px`,
             top: '-12px',
@@ -92,7 +92,7 @@ export const HighLowLines: React.FC = () => {
           }}
         />
         <div
-          className="absolute px-2 py-1 font-mono text-xs text-gray-600 bg-white border border-gray-300 rounded whitespace-nowrap"
+          className="absolute px-2 py-1 font-mono text-xs text-gray-600 bg-gray-500/20 backdrop-blur-sm rounded whitespace-nowrap"
           style={{
             [isLowOnRight ? 'right' : 'left']: `${lineLength + 5}px`,
             top: '-12px',
