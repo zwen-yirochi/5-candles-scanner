@@ -63,6 +63,21 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
     };
   }, []);
 
+  // 차트 외부 터치 시 크로스헤어 비활성화
+  useEffect(() => {
+    if (!isCrosshairActive) return;
+
+    const handleOutsideTouch = (e: TouchEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsCrosshairActive(false);
+        setCrosshairPosition(null);
+      }
+    };
+
+    document.addEventListener('touchstart', handleOutsideTouch);
+    return () => document.removeEventListener('touchstart', handleOutsideTouch);
+  }, [isCrosshairActive, containerRef, setIsCrosshairActive, setCrosshairPosition]);
+
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
       // preventDefault 불필요: touchAction: 'none' CSS가 브라우저 기본 동작 방지

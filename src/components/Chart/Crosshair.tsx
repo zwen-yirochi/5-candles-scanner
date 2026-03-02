@@ -1,5 +1,5 @@
 import { useAtom, useAtomValue } from 'jotai';
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { chartDimensionsAtom } from '../../stores/atoms/chartConfigAtoms';
 import { visibleDataAtom } from '../../stores/atoms/dataAtoms';
 import { indexDomainAtom, priceDomainAtom } from '../../stores/atoms/domainAtoms';
@@ -13,10 +13,26 @@ export const Crosshair: React.FC = () => {
   const indexDomain = useAtomValue(indexDomainAtom);
   const priceDomain = useAtomValue(priceDomainAtom);
 
+  // 터치 후 합성 마우스 이벤트 차단용 타임스탬프
+  const lastTouchTimeRef = useRef(0);
+
+  useEffect(() => {
+    const trackTouch = () => {
+      lastTouchTimeRef.current = Date.now();
+    };
+    document.addEventListener('touchstart', trackTouch, true);
+    document.addEventListener('touchend', trackTouch, true);
+    return () => {
+      document.removeEventListener('touchstart', trackTouch, true);
+      document.removeEventListener('touchend', trackTouch, true);
+    };
+  }, []);
+
+  const isSyntheticMouseEvent = () => Date.now() - lastTouchTimeRef.current < 400;
+
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      // 터치로 크로스헤어가 활성화된 상태면 마우스 이벤트 무시
-      if (isCrosshairActive) return;
+      if (isCrosshairActive || isSyntheticMouseEvent()) return;
       const rect = e.currentTarget.getBoundingClientRect();
       setCrosshairPos({
         x: e.clientX - rect.left,
@@ -28,10 +44,8 @@ export const Crosshair: React.FC = () => {
   );
 
   const handleMouseLeave = useCallback(() => {
-    // 터치로 활성화된 크로스헤어는 마우스 이벤트로 제거하지 않음
-    if (!isCrosshairActive) {
-      setCrosshairPos(null);
-    }
+    if (isCrosshairActive || isSyntheticMouseEvent()) return;
+    setCrosshairPos(null);
   }, [isCrosshairActive, setCrosshairPos]);
 
   const pixelToPrice = (y: number): number => {
