@@ -3,20 +3,8 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { chartDimensionsAtom } from '../../stores/atoms/chartConfigAtoms';
 import { CandleData } from '../../types/candle.types';
 import { visibleDataAtom } from '../../stores/atoms/dataAtoms';
-import { indexDomainAtom, priceDomainAtom } from '../../stores/atoms/domainAtoms';
+import { indexDomainAtom } from '../../stores/atoms/domainAtoms';
 import { crosshairPositionAtom, isCrosshairActiveAtom } from '../../stores/atoms/interactionAtoms';
-
-function formatPrice(price: number): string {
-  const abs = Math.abs(price);
-  const fixed = abs.toFixed(2);
-  const [int, dec] = fixed.split('.');
-  let result = '';
-  for (let i = int.length - 1, count = 0; i >= 0; i--, count++) {
-    if (count > 0 && count % 3 === 0) result = ',' + result;
-    result = int[i] + result;
-  }
-  return (price < 0 ? '-' : '') + result + '.' + dec;
-}
 
 function formatTime(candle: CandleData): string {
   const date = new Date(candle.timestamp);
@@ -27,18 +15,12 @@ function formatTime(candle: CandleData): string {
   return `${month}/${day} ${hours}:${minutes}`;
 }
 
-function pixelToPrice(y: number, height: number, minPrice: number, maxPrice: number): number {
-  const range = maxPrice - minPrice;
-  return maxPrice - (y / height) * range;
-}
-
 export const Crosshair: React.FC = () => {
-  const { width, height } = useAtomValue(chartDimensionsAtom);
+  const { width } = useAtomValue(chartDimensionsAtom);
   const [crosshairPos, setCrosshairPos] = useAtom(crosshairPositionAtom);
   const isCrosshairActive = useAtomValue(isCrosshairActiveAtom);
   const visibleData = useAtomValue(visibleDataAtom);
   const indexDomain = useAtomValue(indexDomainAtom);
-  const priceDomain = useAtomValue(priceDomainAtom);
 
   // 터치 후 합성 마우스 이벤트 차단용 타임스탬프
   const lastTouchTimeRef = useRef(0);
@@ -73,10 +55,6 @@ export const Crosshair: React.FC = () => {
     setCrosshairPos(null);
   }, [isCrosshairActive, setCrosshairPos]);
 
-  const currentPrice = crosshairPos
-    ? pixelToPrice(crosshairPos.y, height, priceDomain.minPrice, priceDomain.maxPrice)
-    : 0;
-
   const indexRange = indexDomain.endIndex - indexDomain.startIndex;
   const hoveredIndex = crosshairPos ? Math.floor((crosshairPos.x / width) * indexRange) : -1;
   const currentTime =
@@ -102,14 +80,6 @@ export const Crosshair: React.FC = () => {
             className="absolute left-0 right-0 z-20 pointer-events-none"
             style={{ top: `${crosshairPos.y}px`, height: '1px', background: '#9CA3AF', opacity: 0.6 }}
           />
-
-          {/* 가격 라벨 (우측) */}
-          <div
-            className="absolute right-0 z-20 px-1 sm:px-2 py-0.5 sm:py-1 font-mono text-[10px] sm:text-xs text-gray-600 transform -translate-y-1/2 bg-white border border-gray-300 rounded pointer-events-none"
-            style={{ top: `${crosshairPos.y}px` }}
-          >
-            ${formatPrice(currentPrice)}
-          </div>
 
           {/* 시간 라벨 (하단) */}
           {currentTime && (
