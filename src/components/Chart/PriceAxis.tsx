@@ -5,6 +5,7 @@ import { useZoomDrag } from '../../hooks/useZoomDrag';
 import { axisWidthAtom, chartDimensionsAtom } from '../../stores/atoms/chartConfigAtoms';
 import { currentPriceAtom, visibleDataAtom } from '../../stores/atoms/dataAtoms';
 import { priceDomainAtom } from '../../stores/atoms/domainAtoms';
+import { crosshairPositionAtom } from '../../stores/atoms/interactionAtoms';
 import { formatPrice, getVisiblePriceLabels } from '../../utils/priceLabel';
 
 export const PriceAxis: React.FC = () => {
@@ -13,6 +14,7 @@ export const PriceAxis: React.FC = () => {
   const currentPrice = useAtomValue(currentPriceAtom);
   const [priceDomain, setPriceDomain] = useAtom(priceDomainAtom);
   const visibleData = useAtomValue(visibleDataAtom);
+  const crosshairPos = useAtomValue(crosshairPositionAtom);
   // Get visible price labels
   const { labels: visibleLabels, step } = useMemo(() => {
     return getVisiblePriceLabels(priceDomain.minPrice, priceDomain.maxPrice, 10);
@@ -33,13 +35,24 @@ export const PriceAxis: React.FC = () => {
   const currentPriceData = useMemo(() => {
     if (!currentPrice) return null;
     const priceRange = priceDomain.maxPrice - priceDomain.minPrice;
-    const y = height - ((currentPrice - priceDomain.minPrice) / priceRange) * height;
+    const rawY = height - ((currentPrice - priceDomain.minPrice) / priceRange) * height;
+    const y = Math.max(0, Math.min(height, rawY));
     return {
       price: currentPrice,
       y,
       label: formatPrice(currentPrice, step),
     };
   }, [currentPrice, priceDomain, height, step]);
+
+  const crosshairPriceData = useMemo(() => {
+    if (!crosshairPos) return null;
+    const priceRange = priceDomain.maxPrice - priceDomain.minPrice;
+    const price = priceDomain.maxPrice - (crosshairPos.y / height) * priceRange;
+    return {
+      y: crosshairPos.y,
+      label: formatPrice(price, step),
+    };
+  }, [crosshairPos, priceDomain, height, step]);
 
   const handleZoom = (factor: number) => {
     const center = (priceDomain.minPrice + priceDomain.maxPrice) / 2;
@@ -90,6 +103,16 @@ export const PriceAxis: React.FC = () => {
             <div className="w-1 h-px bg-gray-300" />
             <div className={`${isNarrow ? 'px-0.5 text-[10px]' : 'px-2 text-xs'} py-0.5 font-mono font-bold text-gray-500 bg-gray-200 rounded`}>
               ${currentPriceData.label}
+            </div>
+          </div>
+        )}
+        {crosshairPriceData && (
+          <div
+            className="absolute left-0 z-20 flex items-center"
+            style={{ top: `${crosshairPriceData.y}px`, transform: 'translateY(-50%)' }}
+          >
+            <div className={`${isNarrow ? 'px-0.5 text-[10px]' : 'px-2 text-xs'} py-0.5 font-mono font-bold text-white bg-gray-500 rounded`}>
+              ${crosshairPriceData.label}
             </div>
           </div>
         )}

@@ -61,6 +61,7 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
   const lastTouchPosRef = useRef({ x: 0, y: 0 });
   const pinchStartDistRef = useRef(0);
   const rafIdRef = useRef<number | null>(null);
+  const crosshairPosRef = useRef<{ x: number; y: number } | null>(null);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -112,26 +113,14 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
         lastTouchPosRef.current = { x: touch.clientX, y: touch.clientY };
 
         if (isCrosshairActiveRef.current) {
-          // 크로스헤어 활성 상태: 바로 crosshair 모드로, 위치 업데이트
+          // 크로스헤어 활성 상태: crosshair 모드 진입 (위치는 이동하지 않음)
           gestureStateRef.current = 'crosshair';
-          const rect = containerRef.current?.getBoundingClientRect();
-          if (rect) {
-            setCrosshairPosition({
-              x: touch.clientX - rect.left,
-              y: touch.clientY - rect.top,
-              source: 'touch',
-            });
-          }
         } else {
           gestureStateRef.current = 'pending';
         }
       }
     },
-    [
-      containerRef,
-      setIsDragging,
-      setCrosshairPosition,
-    ],
+    [setIsDragging],
   );
 
   const handleTouchMove = useCallback(
@@ -205,17 +194,23 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
         return;
       }
 
-      // CROSSHAIR: 손가락 따라 크로스헤어 이동
+      // CROSSHAIR: 드래그 delta만큼 크로스헤어 상대 이동
       if (state === 'crosshair' && e.touches.length >= 1) {
         const touch = e.touches[0];
-        const rect = containerRef.current?.getBoundingClientRect();
-        if (rect) {
-          setCrosshairPosition({
-            x: touch.clientX - rect.left,
-            y: touch.clientY - rect.top,
-            source: 'touch',
-          });
+        const deltaX = touch.clientX - lastTouchPosRef.current.x;
+        const deltaY = touch.clientY - lastTouchPosRef.current.y;
+
+        if (crosshairPosRef.current) {
+          const rect = containerRef.current?.getBoundingClientRect();
+          const maxX = rect ? rect.width : Infinity;
+          const maxY = rect ? rect.height : Infinity;
+          const newX = Math.max(0, Math.min(maxX, crosshairPosRef.current.x + deltaX));
+          const newY = Math.max(0, Math.min(maxY, crosshairPosRef.current.y + deltaY));
+          crosshairPosRef.current = { x: newX, y: newY };
+          setCrosshairPosition({ x: newX, y: newY, source: 'touch' });
         }
+
+        lastTouchPosRef.current = { x: touch.clientX, y: touch.clientY };
         return;
       }
 
@@ -269,11 +264,12 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
           setIsCrosshairActive(true);
           const rect = containerRef.current?.getBoundingClientRect();
           if (rect) {
-            setCrosshairPosition({
+            const pos = {
               x: touch.clientX - rect.left,
               y: touch.clientY - rect.top,
-              source: 'touch',
-            });
+            };
+            crosshairPosRef.current = pos;
+            setCrosshairPosition({ ...pos, source: 'touch' });
           }
         }
       }
@@ -284,6 +280,7 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
         if (isTap(touch, touchStartPosRef.current)) {
           setIsCrosshairActive(false);
           setCrosshairPosition(null);
+          crosshairPosRef.current = null;
         }
       }
 
