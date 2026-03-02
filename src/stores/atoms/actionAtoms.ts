@@ -8,7 +8,7 @@ const CONFIG = {
   DEFAULT_VISIBLE_COUNT: 50,
   INITIAL_FUTURE_BUFFER: 5, // 초기 미래 여백
   MAX_FUTURE_BUFFER: 50, // 최대 미래 여백 (무한 확장 방지)
-  MIN_ZOOM_RANGE: 10,
+  MIN_ZOOM_RANGE: 20,
   PRICE_PADDING: 0.1,
 } as const;
 
@@ -95,12 +95,11 @@ export const panXAtom = atom(null, (get, set, delta: number) => {
   set(indexDomainAtom, { startIndex: newStart, endIndex: newEnd });
 });
 
-// X축 줌
-export const zoomXAtom = atom(null, (get, set, factor: number) => {
+// X축 줌 - anchor 기반 (0=왼쪽, 1=오른쪽, undefined=중앙)
+export const zoomXAtom = atom(null, (get, set, { factor, anchor }: { factor: number; anchor?: number }) => {
   const domain = get(indexDomainAtom);
   const dataLength = get(rawDataAtom).length;
 
-  const center = (domain.startIndex + domain.endIndex) / 2;
   const currentRange = domain.endIndex - domain.startIndex;
   const newRange = currentRange * factor;
 
@@ -108,8 +107,12 @@ export const zoomXAtom = atom(null, (get, set, factor: number) => {
   if (newRange < CONFIG.MIN_ZOOM_RANGE) return;
   if (newRange > dataLength + CONFIG.MAX_FUTURE_BUFFER) return;
 
-  let startIndex = center - newRange / 2;
-  let endIndex = center + newRange / 2;
+  // anchor가 있으면 해당 위치 기준, 없으면 중앙 기준
+  const anchorRatio = anchor ?? 0.5;
+  const anchorIndex = domain.startIndex + currentRange * anchorRatio;
+
+  let startIndex = anchorIndex - newRange * anchorRatio;
+  let endIndex = anchorIndex + newRange * (1 - anchorRatio);
 
   // 왼쪽 경계
   if (startIndex < 0) {
@@ -126,7 +129,7 @@ export const zoomXAtom = atom(null, (get, set, factor: number) => {
 
   set(indexDomainAtom, {
     startIndex: Math.max(0, Math.round(startIndex)),
-    endIndex: Math.min(dataLength - 1, Math.round(endIndex)),
+    endIndex: Math.round(endIndex),
   });
 });
 
