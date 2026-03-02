@@ -13,7 +13,7 @@ export const ChartHeader: React.FC = () => {
         <ConnectionStatus />
       </div>
       <PriceInfo />
-      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
         <IntervalBar />
         <div className="hidden w-px h-4 sm:block bg-neutral-300" />
         <PatternControlPanel />

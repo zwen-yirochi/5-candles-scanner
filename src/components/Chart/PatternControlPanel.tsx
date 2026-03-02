@@ -22,7 +22,7 @@ export const PatternControlPanel: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs">
+    <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
       <button
         onClick={toggleEnabled}
         className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded transition-colors ${
