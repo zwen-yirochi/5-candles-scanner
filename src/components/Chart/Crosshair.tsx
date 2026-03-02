@@ -74,7 +74,7 @@ export const Crosshair: React.FC = () => {
 
           {/* 가격 라벨 (우측) */}
           <div
-            className="absolute right-0 z-20 px-2 py-1 font-mono text-xs text-gray-600 transform -translate-y-1/2 bg-white border border-gray-300 rounded pointer-events-none"
+            className="absolute right-0 z-20 px-1 sm:px-2 py-0.5 sm:py-1 font-mono text-[10px] sm:text-xs text-gray-600 transform -translate-y-1/2 bg-white border border-gray-300 rounded pointer-events-none"
             style={{ top: `${crosshairPos.y}px` }}
           >
             ${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -83,7 +83,7 @@ export const Crosshair: React.FC = () => {
           {/* 시간 라벨 (하단) */}
           {currentTime && (
             <div
-              className="absolute bottom-0 z-20 px-2 py-1 font-mono text-xs text-gray-600 transform -translate-x-1/2 bg-white border border-gray-300 rounded pointer-events-none"
+              className="absolute bottom-0 z-20 px-1 sm:px-2 py-0.5 sm:py-1 font-mono text-[10px] sm:text-xs text-gray-600 transform -translate-x-1/2 bg-white border border-gray-300 rounded pointer-events-none"
               style={{ left: `${crosshairPos.x}px` }}
             >
               {currentTime}
