@@ -15,6 +15,8 @@ export const Crosshair: React.FC = () => {
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
+      // 터치로 크로스헤어가 활성화된 상태면 마우스 이벤트 무시
+      if (isCrosshairActive) return;
       const rect = e.currentTarget.getBoundingClientRect();
       setCrosshairPos({
         x: e.clientX - rect.left,
@@ -22,7 +24,7 @@ export const Crosshair: React.FC = () => {
         source: 'mouse',
       });
     },
-    [setCrosshairPos],
+    [isCrosshairActive, setCrosshairPos],
   );
 
   const handleMouseLeave = useCallback(() => {
