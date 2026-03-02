@@ -3,11 +3,12 @@ import React, { useCallback } from 'react';
 import { chartDimensionsAtom } from '../../stores/atoms/chartConfigAtoms';
 import { visibleDataAtom } from '../../stores/atoms/dataAtoms';
 import { indexDomainAtom, priceDomainAtom } from '../../stores/atoms/domainAtoms';
-import { crosshairPositionAtom } from '../../stores/atoms/interactionAtoms';
+import { crosshairPositionAtom, isCrosshairActiveAtom } from '../../stores/atoms/interactionAtoms';
 
 export const Crosshair: React.FC = () => {
   const { width, height } = useAtomValue(chartDimensionsAtom);
   const [crosshairPos, setCrosshairPos] = useAtom(crosshairPositionAtom);
+  const isCrosshairActive = useAtomValue(isCrosshairActiveAtom);
   const visibleData = useAtomValue(visibleDataAtom);
   const indexDomain = useAtomValue(indexDomainAtom);
   const priceDomain = useAtomValue(priceDomainAtom);
@@ -25,8 +26,11 @@ export const Crosshair: React.FC = () => {
   );
 
   const handleMouseLeave = useCallback(() => {
-    setCrosshairPos(null);
-  }, [setCrosshairPos]);
+    // 터치로 활성화된 크로스헤어는 마우스 이벤트로 제거하지 않음
+    if (!isCrosshairActive) {
+      setCrosshairPos(null);
+    }
+  }, [isCrosshairActive, setCrosshairPos]);
 
   const pixelToPrice = (y: number): number => {
     const range = priceDomain.maxPrice - priceDomain.minPrice;
