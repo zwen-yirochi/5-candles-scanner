@@ -20,6 +20,12 @@ function getDistance(t1: { clientX: number; clientY: number }, t2: { clientX: nu
   return Math.sqrt(dx * dx + dy * dy);
 }
 
+function isTap(pos: { clientX: number; clientY: number }, startPos: { x: number; y: number }): boolean {
+  const dx = pos.clientX - startPos.x;
+  const dy = pos.clientY - startPos.y;
+  return Math.sqrt(dx * dx + dy * dy) < TAP_THRESHOLD;
+}
+
 interface UseTouchGesturesParams {
   containerRef: RefObject<HTMLDivElement | null>;
 }
@@ -76,7 +82,8 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
 
     document.addEventListener('touchstart', handleOutsideTouch);
     return () => document.removeEventListener('touchstart', handleOutsideTouch);
-  }, [isCrosshairActive, containerRef, setIsCrosshairActive, setCrosshairPosition]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- containerRef는 stable ref
+  }, [isCrosshairActive, setIsCrosshairActive, setCrosshairPosition]);
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
@@ -258,10 +265,7 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
       if (state === 'pending') {
         // 이동 없이 손 뗌 = 탭 → 크로스헤어 활성화
         const touch = e.changedTouches[0];
-        const dx = touch.clientX - touchStartPosRef.current.x;
-        const dy = touch.clientY - touchStartPosRef.current.y;
-
-        if (Math.sqrt(dx * dx + dy * dy) < TAP_THRESHOLD) {
+        if (isTap(touch, touchStartPosRef.current)) {
           setIsCrosshairActive(true);
           const rect = containerRef.current?.getBoundingClientRect();
           if (rect) {
@@ -277,15 +281,10 @@ export const useTouchGestures = ({ containerRef }: UseTouchGesturesParams) => {
       if (state === 'crosshair') {
         // 크로스헤어 모드에서 손 뗌 → 탭이었으면 비활성화, 이동이었으면 유지
         const touch = e.changedTouches[0];
-        const dx = touch.clientX - touchStartPosRef.current.x;
-        const dy = touch.clientY - touchStartPosRef.current.y;
-
-        if (Math.sqrt(dx * dx + dy * dy) < TAP_THRESHOLD) {
-          // 탭 = 비활성화
+        if (isTap(touch, touchStartPosRef.current)) {
           setIsCrosshairActive(false);
           setCrosshairPosition(null);
         }
-        // 이동이었으면 크로스헤어 유지 (위치는 마지막 위치에 고정)
       }
 
       if (state === 'panning') {

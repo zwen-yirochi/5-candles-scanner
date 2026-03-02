@@ -1,9 +1,36 @@
 import { useAtom, useAtomValue } from 'jotai';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { chartDimensionsAtom } from '../../stores/atoms/chartConfigAtoms';
+import { CandleData } from '../../types/candle.types';
 import { visibleDataAtom } from '../../stores/atoms/dataAtoms';
 import { indexDomainAtom, priceDomainAtom } from '../../stores/atoms/domainAtoms';
 import { crosshairPositionAtom, isCrosshairActiveAtom } from '../../stores/atoms/interactionAtoms';
+
+function formatPrice(price: number): string {
+  const abs = Math.abs(price);
+  const fixed = abs.toFixed(2);
+  const [int, dec] = fixed.split('.');
+  let result = '';
+  for (let i = int.length - 1, count = 0; i >= 0; i--, count++) {
+    if (count > 0 && count % 3 === 0) result = ',' + result;
+    result = int[i] + result;
+  }
+  return (price < 0 ? '-' : '') + result + '.' + dec;
+}
+
+function formatTime(candle: CandleData): string {
+  const date = new Date(candle.timestamp);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${month}/${day} ${hours}:${minutes}`;
+}
+
+function pixelToPrice(y: number, height: number, minPrice: number, maxPrice: number): number {
+  const range = maxPrice - minPrice;
+  return maxPrice - (y / height) * range;
+}
 
 export const Crosshair: React.FC = () => {
   const { width, height } = useAtomValue(chartDimensionsAtom);
@@ -28,11 +55,9 @@ export const Crosshair: React.FC = () => {
     };
   }, []);
 
-  const isSyntheticMouseEvent = () => Date.now() - lastTouchTimeRef.current < 400;
-
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if (isCrosshairActive || isSyntheticMouseEvent()) return;
+      if (isCrosshairActive || Date.now() - lastTouchTimeRef.current < 400) return;
       const rect = e.currentTarget.getBoundingClientRect();
       setCrosshairPos({
         x: e.clientX - rect.left,
@@ -44,45 +69,20 @@ export const Crosshair: React.FC = () => {
   );
 
   const handleMouseLeave = useCallback(() => {
-    if (isCrosshairActive || isSyntheticMouseEvent()) return;
+    if (isCrosshairActive || Date.now() - lastTouchTimeRef.current < 400) return;
     setCrosshairPos(null);
   }, [isCrosshairActive, setCrosshairPos]);
 
-  const pixelToPrice = (y: number): number => {
-    const range = priceDomain.maxPrice - priceDomain.minPrice;
-    return priceDomain.maxPrice - (y / height) * range;
-  };
+  const currentPrice = crosshairPos
+    ? pixelToPrice(crosshairPos.y, height, priceDomain.minPrice, priceDomain.maxPrice)
+    : 0;
 
-  const formatPrice = (price: number): string => {
-    const fixed = price.toFixed(2);
-    const [int, dec] = fixed.split('.');
-    let result = '';
-    for (let i = int.length - 1, count = 0; i >= 0; i--, count++) {
-      if (count > 0 && count % 3 === 0) result = ',' + result;
-      result = int[i] + result;
-    }
-    return result + '.' + dec;
-  };
-
-  const pixelToTime = (x: number): string => {
-    const indexRange = indexDomain.endIndex - indexDomain.startIndex;
-    const relativeIndex = (x / width) * indexRange;
-    const hoveredIndex = Math.floor(relativeIndex);
-
-    if (hoveredIndex >= 0 && hoveredIndex < visibleData.length) {
-      const candle = visibleData[hoveredIndex];
-      const date = new Date(candle.timestamp);
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      return `${month}/${day} ${hours}:${minutes}`;
-    }
-    return '';
-  };
-
-  const currentPrice = crosshairPos ? pixelToPrice(crosshairPos.y) : 0;
-  const currentTime = crosshairPos ? pixelToTime(crosshairPos.x) : '';
+  const indexRange = indexDomain.endIndex - indexDomain.startIndex;
+  const hoveredIndex = crosshairPos ? Math.floor((crosshairPos.x / width) * indexRange) : -1;
+  const currentTime =
+    hoveredIndex >= 0 && hoveredIndex < visibleData.length
+      ? formatTime(visibleData[hoveredIndex])
+      : '';
 
   return (
     <>
