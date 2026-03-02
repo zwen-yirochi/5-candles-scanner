@@ -90,7 +90,6 @@ export const Crosshair: React.FC = () => {
               {currentTime}
             </div>
           )}
-
         </>
       )}
     </>
