@@ -34,6 +34,11 @@ describe('timestampToIndex', () => {
     expect(timestampToIndex(1600, mockCandles)).toBe(1);
   });
 
+  it('정확히 중간 timestamp는 가까운 인덱스(하한)를 반환한다', () => {
+    // 1500은 1000과 2000의 정중앙 → 먼저 발견되는 인덱스(0)를 반환
+    expect(timestampToIndex(1500, mockCandles)).toBe(0);
+  });
+
   it('빈 배열은 0을 반환한다', () => {
     expect(timestampToIndex(1000, [])).toBe(0);
   });
@@ -46,6 +51,10 @@ describe('indexToTimestamp', () => {
 
   it('범위 초과 인덱스는 마지막 timestamp를 반환한다', () => {
     expect(indexToTimestamp(10, mockCandles)).toBe(3000);
+  });
+
+  it('음수 인덱스는 첫 번째 timestamp를 반환한다', () => {
+    expect(indexToTimestamp(-1, mockCandles)).toBe(1000);
   });
 
   it('빈 배열은 0을 반환한다', () => {
