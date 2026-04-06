@@ -25,6 +25,6 @@ export interface TrendlineObject extends BaseDrawingObject {
 export type DrawingObject = HLineObject | TrendlineObject;
 
 export interface ToolDefinition {
-  type: EditorToolType;
+  type: ActiveToolType;
   label: string;
 }

@@ -54,13 +54,20 @@ function distanceToTrendline(
   const x2 = indexToPixel(i2, domain.index, range);
   const y2 = priceToPixel(obj.p2.price, domain.price, range);
 
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const len2 = dx * dx + dy * dy;
-  if (len2 === 0) return Math.hypot(px - x1, py - y1);
+  const candleWidth = range.width / (domain.index.endIndex - domain.index.startIndex);
+  const centerOffset = candleWidth * 0.5;
+  const cx1 = x1 + centerOffset;
+  const cy1 = y1;
+  const cx2 = x2 + centerOffset;
+  const cy2 = y2;
 
-  const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / len2));
-  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+  const dx = cx2 - cx1;
+  const dy = cy2 - cy1;
+  const len2 = dx * dx + dy * dy;
+  if (len2 === 0) return Math.hypot(px - cx1, py - cy1);
+
+  const t = Math.max(0, Math.min(1, ((px - cx1) * dx + (py - cy1) * dy) / len2));
+  return Math.hypot(px - (cx1 + t * dx), py - (cy1 + t * dy));
 }
 
 function findHitObject(

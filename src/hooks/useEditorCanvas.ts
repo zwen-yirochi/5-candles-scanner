@@ -165,14 +165,17 @@ function renderTrendline(
   const x2 = indexToPixel(i2, indexDomain, range);
   const y2 = priceToPixel(obj.p2.price, priceDomain, range);
 
+  const candleWidth = range.width / (indexDomain.endIndex - indexDomain.startIndex);
+  const centerOffset = candleWidth * 0.5;
+
   ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
+  ctx.moveTo(x1 + centerOffset, y1);
+  ctx.lineTo(x2 + centerOffset, y2);
   ctx.stroke();
 
   if (isSelected) {
-    drawHandle(ctx, x1, y1, color);
-    drawHandle(ctx, x2, y2, color);
+    drawHandle(ctx, x1 + centerOffset, y1, color);
+    drawHandle(ctx, x2 + centerOffset, y2, color);
   }
 }
 

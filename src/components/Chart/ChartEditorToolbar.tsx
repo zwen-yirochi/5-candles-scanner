@@ -1,5 +1,5 @@
 // src/components/Chart/ChartEditorToolbar.tsx
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useAtom, useSetAtom } from 'jotai';
 import React, { useCallback } from 'react';
 import {
   activeToolAtom,
@@ -8,7 +8,7 @@ import {
   editorModeAtom,
   selectedObjectIdAtom,
 } from '../../stores/atoms/editorAtoms';
-import { EditorToolType, ToolDefinition } from '../../types/editor.types';
+import { ActiveToolType, ToolDefinition } from '../../types/editor.types';
 
 const EDITOR_TOOLS: ToolDefinition[] = [
   { type: 'hline',     label: 'HLine' },
@@ -30,7 +30,7 @@ export const ChartEditorToolbar: React.FC = () => {
     setSelectedId(null);
   }, [setEditorMode, setActiveTool, setDraftObject, setSelectedId]);
 
-  const handleToolSelect = useCallback((toolType: EditorToolType) => {
+  const handleToolSelect = useCallback((toolType: ActiveToolType) => {
     if (activeTool === toolType) {
       // 같은 툴 재클릭 → Pan 복귀
       handlePan();
