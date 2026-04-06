@@ -22,8 +22,8 @@ import {
   timestampToIndex,
 } from '../utils/domainToRange';
 
-// 선 히트 테스트 허용 오차 (px)
 const HIT_TOLERANCE = 8;
+const HANDLE_HIT_RADIUS = 12; // 핸들 탭 허용 반경 (렌더 반경 5px보다 크게)
 
 function generateId() {
   return `obj_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -49,25 +49,20 @@ function distanceToTrendline(
 ): number {
   const i1 = timestampToIndex(obj.p1.timestamp, candles);
   const i2 = timestampToIndex(obj.p2.timestamp, candles);
-  const x1 = indexToPixel(i1, domain.index, range);
-  const y1 = priceToPixel(obj.p1.price, domain.price, range);
-  const x2 = indexToPixel(i2, domain.index, range);
-  const y2 = priceToPixel(obj.p2.price, domain.price, range);
-
   const candleWidth = range.width / (domain.index.endIndex - domain.index.startIndex);
   const centerOffset = candleWidth * 0.5;
-  const cx1 = x1 + centerOffset;
-  const cy1 = y1;
-  const cx2 = x2 + centerOffset;
-  const cy2 = y2;
+  const x1 = indexToPixel(i1, domain.index, range) + centerOffset;
+  const y1 = priceToPixel(obj.p1.price, domain.price, range);
+  const x2 = indexToPixel(i2, domain.index, range) + centerOffset;
+  const y2 = priceToPixel(obj.p2.price, domain.price, range);
 
-  const dx = cx2 - cx1;
-  const dy = cy2 - cy1;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
   const len2 = dx * dx + dy * dy;
-  if (len2 === 0) return Math.hypot(px - cx1, py - cy1);
+  if (len2 === 0) return Math.hypot(px - x1, py - y1);
 
-  const t = Math.max(0, Math.min(1, ((px - cx1) * dx + (py - cy1) * dy) / len2));
-  return Math.hypot(px - (cx1 + t * dx), py - (cy1 + t * dy));
+  const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / len2));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
 }
 
 function findHitObject(
@@ -117,8 +112,9 @@ export const useEditorInteraction = () => {
   rangeRef.current       = range;
   candlesRef.current     = candles;
 
-  const dragStartRef        = useRef<{ x: number; y: number } | null>(null);
-  const drawingObjectsRef   = useRef<DrawingObject[]>([]);
+  const dragStartRef      = useRef<{ x: number; y: number } | null>(null);
+  const draggingHandleRef = useRef<'p1' | 'p2' | 'body' | null>(null);
+  const drawingObjectsRef = useRef<DrawingObject[]>([]);
 
   const getEventPos = (e: React.PointerEvent): { x: number; y: number } => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -132,10 +128,47 @@ export const useEditorInteraction = () => {
     const r    = rangeRef.current;
     const c    = candlesRef.current;
 
-    if (mode === 'pan') return; // pan 모드는 기존 이벤트 처리
+    if (mode === 'pan') return;
 
+    if (mode === 'select') {
+      const pos = getEventPos(e);
+      const hit = findHitObject(pos.x, pos.y, drawingObjectsRef.current, d, r, c);
+
+      if (!hit) {
+        // 빈 영역 클릭 → 선택 취소하고 pan으로 복귀 (pan 이벤트는 통과)
+        setSelectedId(null);
+        setEditorMode('pan');
+        return;
+      }
+
+      e.stopPropagation();
+      setSelectedId(hit.id);
+
+      // 추세선 끝점 핸들 감지
+      draggingHandleRef.current = 'body';
+      if (hit.tool === 'trendline') {
+        const tObj = hit as TrendlineObject;
+        const candleWidth = r.width / (d.index.endIndex - d.index.startIndex);
+        const centerOffset = candleWidth * 0.5;
+        const i1 = timestampToIndex(tObj.p1.timestamp, c);
+        const i2 = timestampToIndex(tObj.p2.timestamp, c);
+        const hx1 = indexToPixel(i1, d.index, r) + centerOffset;
+        const hy1 = priceToPixel(tObj.p1.price, d.price, r);
+        const hx2 = indexToPixel(i2, d.index, r) + centerOffset;
+        const hy2 = priceToPixel(tObj.p2.price, d.price, r);
+        if (Math.hypot(pos.x - hx1, pos.y - hy1) <= HANDLE_HIT_RADIUS) {
+          draggingHandleRef.current = 'p1';
+        } else if (Math.hypot(pos.x - hx2, pos.y - hy2) <= HANDLE_HIT_RADIUS) {
+          draggingHandleRef.current = 'p2';
+        }
+      }
+
+      dragStartRef.current = pos;
+      return;
+    }
+
+    // draw 모드
     e.stopPropagation();
-
     const pos = getEventPos(e);
 
     if (mode === 'draw') {
@@ -176,11 +209,7 @@ export const useEditorInteraction = () => {
         }
       }
     }
-
-    if (mode === 'select') {
-      dragStartRef.current = pos;
-    }
-  }, [setDrawingObjects, setActiveTool, setEditorMode, setDraftObject]);
+  }, [setDrawingObjects, setActiveTool, setEditorMode, setDraftObject, setSelectedId]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     const mode = editorModeRef.current;
@@ -189,6 +218,7 @@ export const useEditorInteraction = () => {
     const r    = rangeRef.current;
     const c    = candlesRef.current;
 
+    // 추세선 draft 미리보기
     if (mode === 'draw' && tool === 'trendline') {
       const draft = draftObjectRef.current as TrendlineObject | null;
       if (draft) {
@@ -201,38 +231,53 @@ export const useEditorInteraction = () => {
     }
 
     if (mode === 'select' && dragStartRef.current && selectedIdRef.current) {
-      const pos   = getEventPos(e);
-      const dx    = pos.x - dragStartRef.current.x;
-      const dy    = pos.y - dragStartRef.current.y;
+      const pos    = getEventPos(e);
+      const dx     = pos.x - dragStartRef.current.x;
+      const dy     = pos.y - dragStartRef.current.y;
       dragStartRef.current = pos;
+      const handle = draggingHandleRef.current;
 
-      const priceDelta = -(dy / r.height) * (d.price.maxPrice - d.price.minPrice);
-      const indexDelta = (dx / r.width) * (d.index.endIndex - d.index.startIndex);
-
-      setDrawingObjects((prev) =>
-        prev.map((obj) => {
-          if (obj.id !== selectedIdRef.current) return obj;
-          if (obj.tool === 'hline') {
-            return { ...obj, price: obj.price + priceDelta };
-          }
-          if (obj.tool === 'trendline') {
-            const tObj = obj as TrendlineObject;
-            const newI1 = timestampToIndex(tObj.p1.timestamp, c) + indexDelta;
-            const newI2 = timestampToIndex(tObj.p2.timestamp, c) + indexDelta;
-            return {
-              ...tObj,
-              p1: { timestamp: indexToTimestamp(Math.round(newI1), c), price: tObj.p1.price + priceDelta },
-              p2: { timestamp: indexToTimestamp(Math.round(newI2), c), price: tObj.p2.price + priceDelta },
-            };
-          }
-          return obj;
-        }),
-      );
+      if (handle === 'p1' || handle === 'p2') {
+        // 끝점만 현재 포인터 위치로 이동
+        const index     = pixelToIndex(pos.x, d.index, r);
+        const timestamp = indexToTimestamp(index, c);
+        const price     = pixelToPrice(pos.y, d.price, r);
+        setDrawingObjects((prev) =>
+          prev.map((obj) => {
+            if (obj.id !== selectedIdRef.current || obj.tool !== 'trendline') return obj;
+            return { ...obj, [handle]: { timestamp, price } };
+          }),
+        );
+      } else {
+        // 전체 이동 (delta 기반)
+        const priceDelta = -(dy / r.height) * (d.price.maxPrice - d.price.minPrice);
+        const indexDelta = (dx / r.width) * (d.index.endIndex - d.index.startIndex);
+        setDrawingObjects((prev) =>
+          prev.map((obj) => {
+            if (obj.id !== selectedIdRef.current) return obj;
+            if (obj.tool === 'hline') {
+              return { ...obj, price: obj.price + priceDelta };
+            }
+            if (obj.tool === 'trendline') {
+              const tObj = obj as TrendlineObject;
+              const newI1 = timestampToIndex(tObj.p1.timestamp, c) + indexDelta;
+              const newI2 = timestampToIndex(tObj.p2.timestamp, c) + indexDelta;
+              return {
+                ...tObj,
+                p1: { timestamp: indexToTimestamp(Math.round(newI1), c), price: tObj.p1.price + priceDelta },
+                p2: { timestamp: indexToTimestamp(Math.round(newI2), c), price: tObj.p2.price + priceDelta },
+              };
+            }
+            return obj;
+          }),
+        );
+      }
     }
   }, [setDraftObject, setDrawingObjects]);
 
   const handlePointerUp = useCallback((_e: React.PointerEvent) => {
     dragStartRef.current = null;
+    draggingHandleRef.current = null;
   }, []);
 
   const syncDrawingObjects = useCallback((objs: DrawingObject[]) => {
