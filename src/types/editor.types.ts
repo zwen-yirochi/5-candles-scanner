@@ -1,11 +1,12 @@
 // src/types/editor.types.ts
 
-export type EditorToolType = 'none' | 'hline' | 'trendline';
+export type ActiveToolType = 'hline' | 'trendline';
+export type EditorToolType = 'none' | ActiveToolType;
 export type EditorMode = 'pan' | 'draw' | 'select';
 
-interface BaseDrawingObject {
+export interface BaseDrawingObject {
   id: string;
-  tool: EditorToolType;
+  tool: ActiveToolType;
   selected: boolean;
   color: string;
 }
