@@ -10,7 +10,6 @@ import { ChartErrorBoundary } from '../common';
 import { CandleTooltip } from './CandleTooltip';
 import { ChartArea } from './ChartArea';
 import { ChartEditorToolbar } from './ChartEditorToolbar';
-import { EditorFloatingDelete } from './EditorFloatingDelete';
 import { Crosshair } from './Crosshair';
 import { CurrentPriceLine } from './CurrentPriceLine';
 import { HighLowLines } from './HighLowLines';
@@ -46,7 +45,6 @@ export const CandlestickChart: React.FC = () => {
               <CurrentPriceLine />
               <Crosshair />
               <CandleTooltip />
-              <EditorFloatingDelete />
             </ChartArea>
           </ChartErrorBoundary>
 

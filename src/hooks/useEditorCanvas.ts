@@ -27,13 +27,11 @@ interface EditorRenderCtx {
 
 const COLORS = {
   DEFAULT: '#2962FF',
-  SELECTED: '#FF6D00',
   DRAFT_ALPHA: 0.5,
 } as const;
 
 const LINE_WIDTH = {
   NORMAL: 1.5,
-  SELECTED: 2.5,
 } as const;
 
 const HANDLE_RADIUS = 5;
@@ -108,8 +106,8 @@ function renderObject(
   isDraft: boolean,
   renderCtx: EditorRenderCtx,
 ) {
-  const color     = isSelected ? COLORS.SELECTED : COLORS.DEFAULT;
-  const lineWidth = isSelected ? LINE_WIDTH.SELECTED : LINE_WIDTH.NORMAL;
+  const color     = COLORS.DEFAULT;
+  const lineWidth = LINE_WIDTH.NORMAL;
   const alpha     = isDraft ? COLORS.DRAFT_ALPHA : 1;
 
   ctx.save();
