@@ -18,8 +18,8 @@ export interface HLineObject extends BaseDrawingObject {
 
 export interface TrendlineObject extends BaseDrawingObject {
   tool: 'trendline';
-  p1: { timestamp: number; price: number };
-  p2: { timestamp: number; price: number };
+  p1: { index: number; price: number };
+  p2: { index: number; price: number };
 }
 
 export type DrawingObject = HLineObject | TrendlineObject;

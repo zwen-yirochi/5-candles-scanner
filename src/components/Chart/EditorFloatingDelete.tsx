@@ -1,7 +1,6 @@
 // src/components/Chart/EditorFloatingDelete.tsx
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import React, { useMemo } from 'react';
-import { rawDataAtom } from '../../stores/atoms/dataAtoms';
 import { chartDomainAtom } from '../../stores/atoms/domainAtoms';
 import {
   drawingObjectsAtom,
@@ -13,7 +12,6 @@ import { TrendlineObject } from '../../types/editor.types';
 import {
   indexToPixel,
   priceToPixel,
-  timestampToIndex,
 } from '../../utils/domainToRange';
 
 export const EditorFloatingDelete: React.FC = () => {
@@ -23,7 +21,6 @@ export const EditorFloatingDelete: React.FC = () => {
   const drawingObjects               = useAtomValue(drawingObjectsAtom);
   const domain                       = useAtomValue(chartDomainAtom);
   const range                        = useAtomValue(chartRangeAtom);
-  const candles                      = useAtomValue(rawDataAtom);
 
   const selectedObj = useMemo(
     () => drawingObjects.find((o) => o.id === selectedId) ?? null,
@@ -42,17 +39,15 @@ export const EditorFloatingDelete: React.FC = () => {
       const tObj = selectedObj as TrendlineObject;
       const candleWidth = range.width / (domain.index.endIndex - domain.index.startIndex);
       const centerOffset = candleWidth * 0.5;
-      const i1 = timestampToIndex(tObj.p1.timestamp, candles);
-      const i2 = timestampToIndex(tObj.p2.timestamp, candles);
-      const x1 = indexToPixel(i1, domain.index, range) + centerOffset;
+      const x1 = indexToPixel(tObj.p1.index, domain.index, range) + centerOffset;
       const y1 = priceToPixel(tObj.p1.price, domain.price, range);
-      const x2 = indexToPixel(i2, domain.index, range) + centerOffset;
+      const x2 = indexToPixel(tObj.p2.index, domain.index, range) + centerOffset;
       const y2 = priceToPixel(tObj.p2.price, domain.price, range);
       return { x: (x1 + x2) / 2, y: (y1 + y2) / 2 };
     }
 
     return null;
-  }, [selectedObj, domain, range, candles]);
+  }, [selectedObj, domain, range]);
 
   if (!selectedId || !position) return null;
 
