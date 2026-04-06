@@ -19,7 +19,7 @@ export const ChartArea: React.FC<{ children: React.ReactNode }> = ({ children })
 
   useEffect(() => {
     editor.syncDrawingObjects(drawingObjects);
-  }, [drawingObjects, editor]);
+  }, [drawingObjects, editor.syncDrawingObjects]);
 
   return (
     <div
