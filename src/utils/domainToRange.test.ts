@@ -1,4 +1,4 @@
-import { pixelToPrice, timestampToIndex, indexToTimestamp } from './domainToRange';
+import { pixelToPrice, pixelToFloatIndex, timestampToIndex, indexToTimestamp } from './domainToRange';
 import { CandleData } from '../types/candle.types';
 
 const mockCandles: CandleData[] = [
@@ -59,5 +59,30 @@ describe('indexToTimestamp', () => {
 
   it('빈 배열은 0을 반환한다', () => {
     expect(indexToTimestamp(0, [])).toBe(0);
+  });
+});
+
+describe('pixelToFloatIndex', () => {
+  const indexDomain = { startIndex: 10, endIndex: 20 };
+  const range = { width: 300, height: 300 };
+
+  it('x=0은 startIndex를 반환한다', () => {
+    expect(pixelToFloatIndex(0, indexDomain, range)).toBeCloseTo(10);
+  });
+
+  it('x=width는 endIndex를 반환한다', () => {
+    expect(pixelToFloatIndex(300, indexDomain, range)).toBeCloseTo(20);
+  });
+
+  it('중앙은 중간 인덱스를 반환한다', () => {
+    expect(pixelToFloatIndex(150, indexDomain, range)).toBeCloseTo(15);
+  });
+
+  it('x가 음수이면 startIndex 미만을 반환한다 (클램핑 없음)', () => {
+    expect(pixelToFloatIndex(-150, indexDomain, range)).toBeCloseTo(5);
+  });
+
+  it('x가 width 초과이면 endIndex 초과를 반환한다 (클램핑 없음)', () => {
+    expect(pixelToFloatIndex(450, indexDomain, range)).toBeCloseTo(25);
   });
 });

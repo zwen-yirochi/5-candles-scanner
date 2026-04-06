@@ -65,3 +65,12 @@ export const indexToTimestamp = (index: number, candles: CandleData[]): number =
   const clamped = Math.max(0, Math.min(candles.length - 1, index));
   return candles[clamped].timestamp;
 };
+
+export const pixelToFloatIndex = (
+  pixelX: number,
+  domain: IndexDomain,
+  range: ChartRange,
+): number => {
+  const normalized = pixelX / range.width;
+  return domain.startIndex + normalized * (domain.endIndex - domain.startIndex);
+};
