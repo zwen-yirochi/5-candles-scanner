@@ -36,3 +36,32 @@ export const pixelToIndex = (pixelX: number, domain: IndexDomain, range: ChartRa
   const normalized = pixelX / range.width;
   return Math.floor(domain.startIndex + normalized * (domain.endIndex - domain.startIndex));
 };
+
+export const pixelToPrice = (
+  pixelY: number,
+  domain: PriceDomain,
+  range: ChartRange,
+): number => {
+  const normalized = 1 - pixelY / range.height;
+  return domain.minPrice + normalized * (domain.maxPrice - domain.minPrice);
+};
+
+export const timestampToIndex = (timestamp: number, candles: CandleData[]): number => {
+  if (candles.length === 0) return 0;
+  let closest = 0;
+  let minDiff = Math.abs(candles[0].timestamp - timestamp);
+  for (let i = 1; i < candles.length; i++) {
+    const diff = Math.abs(candles[i].timestamp - timestamp);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closest = i;
+    }
+  }
+  return closest;
+};
+
+export const indexToTimestamp = (index: number, candles: CandleData[]): number => {
+  if (candles.length === 0) return 0;
+  const clamped = Math.max(0, Math.min(candles.length - 1, index));
+  return candles[clamped].timestamp;
+};
