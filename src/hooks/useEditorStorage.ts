@@ -7,11 +7,29 @@ import { DrawingObject } from '../types/editor.types';
 
 const STORAGE_KEY_PREFIX = 'editor_drawings_';
 
+function isValidDrawingObject(obj: unknown): obj is DrawingObject {
+  if (!obj || typeof obj !== 'object') return false;
+  const o = obj as Record<string, unknown>;
+  if (typeof o.id !== 'string' || typeof o.color !== 'string') return false;
+  if (o.tool === 'hline') return typeof o.price === 'number';
+  if (o.tool === 'trendline') {
+    const p1 = o.p1 as Record<string, unknown> | undefined;
+    const p2 = o.p2 as Record<string, unknown> | undefined;
+    return (
+      !!p1 && typeof p1.index === 'number' && typeof p1.price === 'number' &&
+      !!p2 && typeof p2.index === 'number' && typeof p2.price === 'number'
+    );
+  }
+  return false;
+}
+
 function loadFromStorage(symbol: string): DrawingObject[] {
   try {
     const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${symbol}`);
     if (!raw) return [];
-    return JSON.parse(raw) as DrawingObject[];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isValidDrawingObject);
   } catch {
     return [];
   }
