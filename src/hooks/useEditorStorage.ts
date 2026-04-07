@@ -18,37 +18,47 @@ function loadFromStorage(symbol: string): DrawingObject[] {
 }
 
 function saveToStorage(symbol: string, objects: DrawingObject[]): void {
-  localStorage.setItem(`${STORAGE_KEY_PREFIX}${symbol}`, JSON.stringify(objects));
+  try {
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}${symbol}`, JSON.stringify(objects));
+  } catch {
+    // QuotaExceededError 등 저장 실패 시 무시
+  }
 }
 
 export const useEditorStorage = () => {
   const symbol = useAtomValue(symbolAtom);
   const [drawingObjects, setDrawingObjects] = useAtom(drawingObjectsAtom);
 
-  // 심볼 변경 감지를 위한 이전값 추적
-  const prevSymbolRef      = useRef<string | null>(null);
-  // saveToStorage에서 항상 최신 drawingObjects를 참조하기 위한 ref
-  const drawingObjectsRef  = useRef(drawingObjects);
+  // 현재 표시 중인 심볼 (저장 키로 사용)
+  const activeSymbolRef = useRef<string>(symbol);
+  // 초기 로드 완료 여부
+  const isInitializedRef = useRef(false);
+  // 심볼 변경 시 이전 drawingObjects를 참조하기 위한 ref
+  const drawingObjectsRef = useRef(drawingObjects);
   drawingObjectsRef.current = drawingObjects;
 
-  // 마운트 시 첫 번째 심볼 초기 로드
+  // 마운트 시 초기 심볼 데이터 로드
   useEffect(() => {
-    prevSymbolRef.current = symbol;
+    activeSymbolRef.current = symbol;
+    isInitializedRef.current = true;
     setDrawingObjects(loadFromStorage(symbol));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 심볼 변경 시: 새 심볼의 저장값 로드
-  // (이전 심볼 데이터는 아래 save effect에서 이미 저장되어 있음)
+  // 심볼 변경 시: 이전 심볼 저장 → 새 심볼 로드
   useEffect(() => {
-    if (prevSymbolRef.current === null || prevSymbolRef.current === symbol) return;
-    prevSymbolRef.current = symbol;
+    if (!isInitializedRef.current) return;
+    if (activeSymbolRef.current === symbol) return;
+    // drawingObjectsRef.current = 이전 심볼의 최신 데이터
+    saveToStorage(activeSymbolRef.current, drawingObjectsRef.current);
+    activeSymbolRef.current = symbol;
     setDrawingObjects(loadFromStorage(symbol));
   }, [symbol, setDrawingObjects]);
 
-  // drawingObjects 변경 시 현재 심볼로 자동 저장
+  // drawingObjects 변경 시 activeSymbolRef.current 키로 자동 저장
+  // (symbol 대신 activeSymbolRef.current 사용 → 심볼 전환 중 잘못된 키에 저장 방지)
   useEffect(() => {
-    if (prevSymbolRef.current === null) return; // 초기 로드 전
-    saveToStorage(symbol, drawingObjects);
-  }, [drawingObjects, symbol]);
+    if (!isInitializedRef.current) return;
+    saveToStorage(activeSymbolRef.current, drawingObjects);
+  }, [drawingObjects]);
 };
