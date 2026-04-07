@@ -125,7 +125,7 @@ export const useEditorInteraction = () => {
   };
 
   // 마그넷 적용: 스냅 결과 있으면 그 좌표, 없으면 원래 포인터 좌표
-  const applyMagnet = (
+  const applyMagnet = useCallback((
     pixelX: number,
     pixelY: number,
     d: typeof domain,
@@ -139,7 +139,7 @@ export const useEditorInteraction = () => {
       floatIndex: mag ? mag.index : pixelToFloatIndex(pixelX, d.index, r),
       price:      mag ? mag.price : pixelToPrice(pixelY, d.price, r),
     };
-  };
+  }, []);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     const mode = editorModeRef.current;
@@ -189,8 +189,7 @@ export const useEditorInteraction = () => {
 
     if (mode === 'draw') {
       if (tool === 'hline') {
-        const mag = magnetEnabledRef.current ? snapToMagnet(pos.x, pos.y, c, d, r) : null;
-        const price = mag ? mag.price : pixelToPrice(pos.y, d.price, r);
+        const { price } = applyMagnet(pos.x, pos.y, d, r, c);
         const newObj: HLineObject = {
           id: generateId(), tool: 'hline', selected: false, color: '#2962FF', price,
         };
