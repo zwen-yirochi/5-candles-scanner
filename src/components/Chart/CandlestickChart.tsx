@@ -4,6 +4,7 @@ import { useCandleCanvas } from '../../hooks/useCandleCanvas';
 import { useChartData } from '../../hooks/useChartData';
 import { useChartInit } from '../../hooks/useChartInit';
 import { useEditorCanvas } from '../../hooks/useEditorCanvas';
+import { useEditorStorage } from '../../hooks/useEditorStorage';
 import { usePatternAnalysis } from '../../hooks/usePatternAnalysis';
 import { symbolAtom } from '../../stores/atoms/chartConfigAtoms';
 import { ChartErrorBoundary } from '../common';
@@ -19,6 +20,7 @@ import { TimeAxis } from './TimeAxis';
 export const CandlestickChart: React.FC = () => {
   const { loading, error } = useChartData();
   useChartInit();
+  useEditorStorage();
   const canvasRef       = useCandleCanvas();
   const editorCanvasRef = useEditorCanvas();
 
