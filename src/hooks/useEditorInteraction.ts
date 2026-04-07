@@ -5,6 +5,7 @@ import { rawDataAtom } from '../stores/atoms/dataAtoms';
 import { chartDomainAtom } from '../stores/atoms/domainAtoms';
 import {
   activeToolAtom,
+  contextMenuPositionAtom,
   drawingObjectsAtom,
   draftObjectAtom,
   editorModeAtom,
@@ -85,17 +86,16 @@ function findHitObject(
 }
 
 export const useEditorInteraction = () => {
-  const [editorMode, setEditorMode]   = useAtom(editorModeAtom);
-  const [activeTool, setActiveTool]   = useAtom(activeToolAtom);
-  const [selectedId, setSelectedId]   = useAtom(selectedObjectIdAtom);
-  const setDrawingObjects             = useSetAtom(drawingObjectsAtom);
-  const [draftObject, setDraftObject] = useAtom(draftObjectAtom);
-  const domain                        = useAtomValue(chartDomainAtom);
-  const range                         = useAtomValue(chartRangeAtom);
-  // Task 4 마그넷 기능을 위해 candles/candlesRef를 미리 구독해 둠
-  // snapToMagnet(pixelX, pixelY, candles, ...) 호출에서 사용됨
-  const candles                       = useAtomValue(rawDataAtom);
-  const magnetEnabled                 = useAtomValue(magnetEnabledAtom);
+  const [editorMode, setEditorMode]        = useAtom(editorModeAtom);
+  const [activeTool, setActiveTool]        = useAtom(activeToolAtom);
+  const [selectedId, setSelectedId]        = useAtom(selectedObjectIdAtom);
+  const setDrawingObjects                  = useSetAtom(drawingObjectsAtom);
+  const [draftObject, setDraftObject]      = useAtom(draftObjectAtom);
+  const setContextMenuPosition             = useSetAtom(contextMenuPositionAtom);
+  const domain                             = useAtomValue(chartDomainAtom);
+  const range                              = useAtomValue(chartRangeAtom);
+  const candles                            = useAtomValue(rawDataAtom);
+  const magnetEnabled                      = useAtomValue(magnetEnabledAtom);
 
   const editorModeRef    = useRef(editorMode);
   const activeToolRef    = useRef(activeTool);
@@ -124,7 +124,6 @@ export const useEditorInteraction = () => {
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   };
 
-  // 마그넷 적용: 스냅 결과 있으면 그 좌표, 없으면 원래 포인터 좌표
   const applyMagnet = useCallback((
     pixelX: number,
     pixelY: number,
@@ -157,6 +156,7 @@ export const useEditorInteraction = () => {
       if (!hit) {
         setSelectedId(null);
         setEditorMode('pan');
+        setContextMenuPosition(null);
         return;
       }
 
@@ -220,7 +220,7 @@ export const useEditorInteraction = () => {
         }
       }
     }
-  }, [setDrawingObjects, setActiveTool, setEditorMode, setDraftObject, setSelectedId]);
+  }, [setDrawingObjects, setActiveTool, setEditorMode, setDraftObject, setSelectedId, setContextMenuPosition]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     const mode = editorModeRef.current;
@@ -246,7 +246,6 @@ export const useEditorInteraction = () => {
       const handle = draggingHandleRef.current;
 
       if (handle === 'p1' || handle === 'p2') {
-        // 끝점 드래그: 마그넷 적용
         const { floatIndex, price } = applyMagnet(pos.x, pos.y, d, r, c);
         setDrawingObjects((prev) =>
           prev.map((obj) => {
@@ -301,10 +300,12 @@ export const useEditorInteraction = () => {
       e.stopPropagation();
       setSelectedId(hit.id);
       setEditorMode('select');
+      setContextMenuPosition({ x: pos.x, y: pos.y });
     } else {
       setSelectedId(null);
+      setContextMenuPosition(null);
     }
-  }, [setSelectedId, setEditorMode]);
+  }, [setSelectedId, setEditorMode, setContextMenuPosition]);
 
   return {
     handlePointerDown,
