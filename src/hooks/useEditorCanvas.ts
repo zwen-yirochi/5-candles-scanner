@@ -149,18 +149,40 @@ function renderTrendline(
   color: string,
   isSelected: boolean,
 ) {
-  const candleWidth   = range.width / (indexDomain.endIndex - indexDomain.startIndex);
-  const centerOffset  = candleWidth * 0.5;
+  const candleWidth  = range.width / (indexDomain.endIndex - indexDomain.startIndex);
+  const centerOffset = candleWidth * 0.5;
   const x1 = indexToPixel(obj.p1.index, indexDomain, range) + centerOffset;
   const y1 = priceToPixel(obj.p1.price, priceDomain, range);
   const x2 = indexToPixel(obj.p2.index, indexDomain, range) + centerOffset;
   const y2 = priceToPixel(obj.p2.price, priceDomain, range);
 
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+
+  // 연장 좌표 계산 (slope 유지)
+  let startX = x1;
+  let startY = y1;
+  let endX   = x2;
+  let endY   = y2;
+
+  if (dx !== 0) {
+    const slope = dy / dx;
+    if (obj.extendLeft) {
+      startX = 0;
+      startY = y1 + slope * (0 - x1);
+    }
+    if (obj.extendRight) {
+      endX = range.width;
+      endY = y1 + slope * (range.width - x1);
+    }
+  }
+
   ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
+  ctx.moveTo(startX, startY);
+  ctx.lineTo(endX, endY);
   ctx.stroke();
 
+  // 핸들은 항상 원래 끝점에 표시
   if (isSelected) {
     drawHandle(ctx, x1, y1, color);
     drawHandle(ctx, x2, y2, color);
