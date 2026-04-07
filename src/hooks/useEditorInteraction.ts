@@ -8,9 +8,11 @@ import {
   drawingObjectsAtom,
   draftObjectAtom,
   editorModeAtom,
+  magnetEnabledAtom,
   selectedObjectIdAtom,
 } from '../stores/atoms/editorAtoms';
 import { chartRangeAtom } from '../stores/atoms/rangeAtoms';
+import { CandleData } from '../types/candle.types';
 import { IndexDomain, PriceDomain } from '../types/domain.types';
 import { DrawingObject, HLineObject, TrendlineObject } from '../types/editor.types';
 import { ChartRange } from '../types/range.types';
@@ -20,6 +22,7 @@ import {
   pixelToPrice,
   priceToPixel,
 } from '../utils/domainToRange';
+import { snapToMagnet } from '../utils/editorMagnet';
 
 const HIT_TOLERANCE = 8;
 const HANDLE_HIT_RADIUS = 12;
@@ -92,22 +95,25 @@ export const useEditorInteraction = () => {
   // Task 4 마그넷 기능을 위해 candles/candlesRef를 미리 구독해 둠
   // snapToMagnet(pixelX, pixelY, candles, ...) 호출에서 사용됨
   const candles                       = useAtomValue(rawDataAtom);
+  const magnetEnabled                 = useAtomValue(magnetEnabledAtom);
 
-  const editorModeRef  = useRef(editorMode);
-  const activeToolRef  = useRef(activeTool);
-  const selectedIdRef  = useRef(selectedId);
-  const draftObjectRef = useRef(draftObject);
-  const domainRef      = useRef(domain);
-  const rangeRef       = useRef(range);
-  const candlesRef     = useRef(candles);
+  const editorModeRef    = useRef(editorMode);
+  const activeToolRef    = useRef(activeTool);
+  const selectedIdRef    = useRef(selectedId);
+  const draftObjectRef   = useRef(draftObject);
+  const domainRef        = useRef(domain);
+  const rangeRef         = useRef(range);
+  const candlesRef       = useRef(candles);
+  const magnetEnabledRef = useRef(magnetEnabled);
 
-  editorModeRef.current  = editorMode;
-  activeToolRef.current  = activeTool;
-  selectedIdRef.current  = selectedId;
-  draftObjectRef.current = draftObject;
-  domainRef.current      = domain;
-  rangeRef.current       = range;
-  candlesRef.current     = candles;
+  editorModeRef.current    = editorMode;
+  activeToolRef.current    = activeTool;
+  selectedIdRef.current    = selectedId;
+  draftObjectRef.current   = draftObject;
+  domainRef.current        = domain;
+  rangeRef.current         = range;
+  candlesRef.current       = candles;
+  magnetEnabledRef.current = magnetEnabled;
 
   const dragStartRef      = useRef<{ x: number; y: number } | null>(null);
   const draggingHandleRef = useRef<'p1' | 'p2' | 'body' | null>(null);
@@ -118,11 +124,29 @@ export const useEditorInteraction = () => {
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   };
 
+  // 마그넷 적용: 스냅 결과 있으면 그 좌표, 없으면 원래 포인터 좌표
+  const applyMagnet = (
+    pixelX: number,
+    pixelY: number,
+    d: typeof domain,
+    r: typeof range,
+    c: CandleData[],
+  ): { floatIndex: number; price: number } => {
+    const mag = magnetEnabledRef.current
+      ? snapToMagnet(pixelX, pixelY, c, d, r)
+      : null;
+    return {
+      floatIndex: mag ? mag.index : pixelToFloatIndex(pixelX, d.index, r),
+      price:      mag ? mag.price : pixelToPrice(pixelY, d.price, r),
+    };
+  };
+
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     const mode = editorModeRef.current;
     const tool = activeToolRef.current;
     const d    = domainRef.current;
     const r    = rangeRef.current;
+    const c    = candlesRef.current;
 
     if (mode === 'pan') return;
 
@@ -165,7 +189,8 @@ export const useEditorInteraction = () => {
 
     if (mode === 'draw') {
       if (tool === 'hline') {
-        const price = pixelToPrice(pos.y, d.price, r);
+        const mag = magnetEnabledRef.current ? snapToMagnet(pos.x, pos.y, c, d, r) : null;
+        const price = mag ? mag.price : pixelToPrice(pos.y, d.price, r);
         const newObj: HLineObject = {
           id: generateId(), tool: 'hline', selected: false, color: '#2962FF', price,
         };
@@ -175,8 +200,7 @@ export const useEditorInteraction = () => {
 
       } else if (tool === 'trendline') {
         const draft = draftObjectRef.current as TrendlineObject | null;
-        const floatIndex = pixelToFloatIndex(pos.x, d.index, r);
-        const price      = pixelToPrice(pos.y, d.price, r);
+        const { floatIndex, price } = applyMagnet(pos.x, pos.y, d, r, c);
 
         if (!draft) {
           const newDraft: TrendlineObject = {
@@ -204,13 +228,13 @@ export const useEditorInteraction = () => {
     const tool = activeToolRef.current;
     const d    = domainRef.current;
     const r    = rangeRef.current;
+    const c    = candlesRef.current;
 
     if (mode === 'draw' && tool === 'trendline') {
       const draft = draftObjectRef.current as TrendlineObject | null;
       if (draft) {
-        const pos        = getEventPos(e);
-        const floatIndex = pixelToFloatIndex(pos.x, d.index, r);
-        const price      = pixelToPrice(pos.y, d.price, r);
+        const pos = getEventPos(e);
+        const { floatIndex, price } = applyMagnet(pos.x, pos.y, d, r, c);
         setDraftObject({ ...draft, p2: { index: floatIndex, price } });
       }
     }
@@ -223,8 +247,8 @@ export const useEditorInteraction = () => {
       const handle = draggingHandleRef.current;
 
       if (handle === 'p1' || handle === 'p2') {
-        const floatIndex = pixelToFloatIndex(pos.x, d.index, r);
-        const price      = pixelToPrice(pos.y, d.price, r);
+        // 끝점 드래그: 마그넷 적용
+        const { floatIndex, price } = applyMagnet(pos.x, pos.y, d, r, c);
         setDrawingObjects((prev) =>
           prev.map((obj) => {
             if (obj.id !== selectedIdRef.current || obj.tool !== 'trendline') return obj;
@@ -232,6 +256,7 @@ export const useEditorInteraction = () => {
           }),
         );
       } else {
+        // 전체 이동: delta 기반 (마그넷 미적용)
         const priceDelta = -(dy / r.height) * (d.price.maxPrice - d.price.minPrice);
         const indexDelta = (dx / r.width) * (d.index.endIndex - d.index.startIndex);
         setDrawingObjects((prev) =>

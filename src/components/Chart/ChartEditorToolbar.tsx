@@ -6,6 +6,7 @@ import {
   drawingObjectsAtom,
   draftObjectAtom,
   editorModeAtom,
+  magnetEnabledAtom,
   selectedObjectIdAtom,
 } from '../../stores/atoms/editorAtoms';
 import { crosshairPositionAtom } from '../../stores/atoms/interactionAtoms';
@@ -14,12 +15,12 @@ import { ActiveToolType, ToolDefinition } from '../../types/editor.types';
 const EDITOR_TOOLS: ToolDefinition[] = [
   { type: 'hline',     label: 'HLine' },
   { type: 'trendline', label: 'Trend' },
-  // 새 툴은 여기에 추가
 ];
 
 export const ChartEditorToolbar: React.FC = () => {
   const [activeTool, setActiveTool]         = useAtom(activeToolAtom);
   const [selectedId, setSelectedId]         = useAtom(selectedObjectIdAtom);
+  const [magnetEnabled, setMagnetEnabled]   = useAtom(magnetEnabledAtom);
   const setEditorMode                       = useSetAtom(editorModeAtom);
   const setDraftObject                      = useSetAtom(draftObjectAtom);
   const setDrawingObjects                   = useSetAtom(drawingObjectsAtom);
@@ -70,6 +71,20 @@ export const ChartEditorToolbar: React.FC = () => {
           </button>
         );
       })}
+
+      {/* 마그넷 토글 버튼 */}
+      <button
+        onClick={() => setMagnetEnabled((v) => !v)}
+        className={`flex items-center gap-1 px-3 py-2 rounded text-xs font-medium min-h-[36px] transition-colors
+          ${magnetEnabled
+            ? 'bg-blue-600 text-white'
+            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+          }`}
+        title="마그넷: OHLC 스냅"
+      >
+        <span>🧲</span>
+        <span>Magnet</span>
+      </button>
 
       {selectedId && (
         <button
