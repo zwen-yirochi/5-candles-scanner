@@ -3,6 +3,7 @@ import { useAtom, useSetAtom } from 'jotai';
 import React, { useCallback } from 'react';
 import {
   activeToolAtom,
+  contextMenuPositionAtom,
   draftObjectAtom,
   editorModeAtom,
   magnetEnabledAtom,
@@ -23,13 +24,15 @@ export const ChartEditorToolbar: React.FC = () => {
   const setDraftObject                    = useSetAtom(draftObjectAtom);
   const setSelectedId                     = useSetAtom(selectedObjectIdAtom);
   const setCrosshairPosition              = useSetAtom(crosshairPositionAtom);
+  const setContextMenuPosition            = useSetAtom(contextMenuPositionAtom);
 
   const handlePan = useCallback(() => {
     setEditorMode('pan');
     setActiveTool('none');
     setDraftObject(null);
     setSelectedId(null);
-  }, [setEditorMode, setActiveTool, setDraftObject, setSelectedId]);
+    setContextMenuPosition(null);
+  }, [setEditorMode, setActiveTool, setDraftObject, setSelectedId, setContextMenuPosition]);
 
   const handleToolSelect = useCallback((toolType: ActiveToolType) => {
     if (activeTool === toolType) {

@@ -1,6 +1,6 @@
 // src/components/Chart/EditorContextMenu.tsx
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { CONTEXT_ACTIONS } from '../../config/editorContextActions';
 import { chartDimensionsAtom } from '../../stores/atoms/chartConfigAtoms';
 import {
@@ -25,6 +25,15 @@ export const EditorContextMenu: React.FC = () => {
     setPosition(null);
   }, [setSelectedId, setEditorMode, setPosition]);
 
+  useEffect(() => {
+    if (!selectedId) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedId, close]);
+
   if (!selectedId || !position || !selectedObj) return null;
 
   const actions    = CONTEXT_ACTIONS[selectedObj.tool];
@@ -36,7 +45,9 @@ export const EditorContextMenu: React.FC = () => {
   const clampedX = Math.max(MENU_WIDTH / 2, Math.min(position.x, width - MENU_WIDTH / 2));
   // 수직 flip: 아래 공간이 부족하면 위에 표시
   const above = position.y + menuHeight > height;
-  const top   = above ? position.y - menuHeight - 8 : position.y + 8;
+  const top   = above
+    ? Math.max(0, position.y - menuHeight - 8)
+    : position.y + 8;
 
   return (
     <div
