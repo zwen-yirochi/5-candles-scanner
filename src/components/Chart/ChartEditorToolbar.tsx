@@ -3,7 +3,6 @@ import { useAtom, useSetAtom } from 'jotai';
 import React, { useCallback } from 'react';
 import {
   activeToolAtom,
-  drawingObjectsAtom,
   draftObjectAtom,
   editorModeAtom,
   magnetEnabledAtom,
@@ -18,13 +17,12 @@ const EDITOR_TOOLS: ToolDefinition[] = [
 ];
 
 export const ChartEditorToolbar: React.FC = () => {
-  const [activeTool, setActiveTool]         = useAtom(activeToolAtom);
-  const [selectedId, setSelectedId]         = useAtom(selectedObjectIdAtom);
-  const [magnetEnabled, setMagnetEnabled]   = useAtom(magnetEnabledAtom);
-  const setEditorMode                       = useSetAtom(editorModeAtom);
-  const setDraftObject                      = useSetAtom(draftObjectAtom);
-  const setDrawingObjects                   = useSetAtom(drawingObjectsAtom);
-  const setCrosshairPosition                = useSetAtom(crosshairPositionAtom);
+  const [activeTool, setActiveTool]       = useAtom(activeToolAtom);
+  const [magnetEnabled, setMagnetEnabled] = useAtom(magnetEnabledAtom);
+  const setEditorMode                     = useSetAtom(editorModeAtom);
+  const setDraftObject                    = useSetAtom(draftObjectAtom);
+  const setSelectedId                     = useSetAtom(selectedObjectIdAtom);
+  const setCrosshairPosition              = useSetAtom(crosshairPositionAtom);
 
   const handlePan = useCallback(() => {
     setEditorMode('pan');
@@ -44,13 +42,6 @@ export const ChartEditorToolbar: React.FC = () => {
       setCrosshairPosition(null);
     }
   }, [activeTool, handlePan, setActiveTool, setEditorMode, setDraftObject, setSelectedId, setCrosshairPosition]);
-
-  const handleDelete = useCallback(() => {
-    if (!selectedId) return;
-    setDrawingObjects((prev) => prev.filter((obj) => obj.id !== selectedId));
-    setSelectedId(null);
-    setEditorMode('pan');
-  }, [selectedId, setDrawingObjects, setSelectedId, setEditorMode]);
 
   return (
     <div className="flex items-center gap-1 px-2 py-1 bg-[#F5F5F0] border-b border-[#D5D5D0]">
@@ -72,7 +63,6 @@ export const ChartEditorToolbar: React.FC = () => {
         );
       })}
 
-      {/* 마그넷 토글 버튼 */}
       <button
         onClick={() => setMagnetEnabled((v) => !v)}
         className={`flex items-center gap-1 px-3 py-2 rounded text-xs font-medium min-h-[36px] transition-colors
@@ -85,16 +75,6 @@ export const ChartEditorToolbar: React.FC = () => {
         <span>🧲</span>
         <span>Magnet</span>
       </button>
-
-      {selectedId && (
-        <button
-          onClick={handleDelete}
-          className="flex items-center gap-1 px-3 py-2 rounded text-xs font-medium min-h-[36px] bg-red-100 text-red-700 border border-red-300 hover:bg-red-200 transition-colors ml-2"
-        >
-          <span>🗑</span>
-          <span>Delete</span>
-        </button>
-      )}
     </div>
   );
 };
