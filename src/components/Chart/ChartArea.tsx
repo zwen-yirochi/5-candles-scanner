@@ -7,6 +7,7 @@ import { useEditorInteraction } from '../../hooks/useEditorInteraction';
 import { useTouchGestures } from '../../hooks/useTouchGestures';
 import { chartDimensionsAtom } from '../../stores/atoms/chartConfigAtoms';
 import { drawingObjectsAtom } from '../../stores/atoms/editorAtoms';
+import { EditorContextMenu } from './EditorContextMenu';
 
 export const ChartArea: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { width, height }  = useAtomValue(chartDimensionsAtom);
@@ -41,6 +42,7 @@ export const ChartArea: React.FC<{ children: React.ReactNode }> = ({ children })
       onTouchEnd={editor.isDrawMode || editor.isSelectMode ? undefined : touchGestures.handleTouchEnd}
     >
       {children}
+      <EditorContextMenu />
     </div>
   );
 };

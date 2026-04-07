@@ -19,3 +19,9 @@ export const selectedObjectIdAtom = atom<string | null>(null);
 
 // 그리는 중인 임시 객체 (추세선 p1 확정 후 p2 미리보기용)
 export const draftObjectAtom = atom<DrawingObject | null>(null);
+
+// 마그넷 활성화 여부 (ON = OHLC 스냅)
+export const magnetEnabledAtom = atom<boolean>(false);
+
+// 컨텍스트 메뉴 표시 좌표 (null = 닫힘)
+export const contextMenuPositionAtom = atom<{ x: number; y: number } | null>(null);
