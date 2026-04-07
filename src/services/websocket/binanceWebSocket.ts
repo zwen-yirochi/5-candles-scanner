@@ -49,6 +49,7 @@ export class BinanceWebSocketClient {
     };
 
     this.ws.onmessage = (event: MessageEvent) => {
+      if (this.isIntentionallyClosed) return;
       try {
         const data: BinanceKlineWebSocketData = JSON.parse(event.data);
         this.config.onMessage?.(data);
@@ -58,18 +59,20 @@ export class BinanceWebSocketClient {
     };
 
     this.ws.onerror = (error: Event) => {
+      if (this.isIntentionallyClosed) return;
       console.error('WebSocket error:', error);
       this.handleError(new Error('WebSocket error occurred'));
     };
 
     this.ws.onclose = (event: CloseEvent) => {
+      // 의도적으로 닫은 경우 콜백·재연결 모두 생략
+      // (심볼 전환 시 구 연결의 onclose가 새 연결 이후에 도착해
+      //  isConnected를 false로 덮어쓰는 race condition 방지)
+      if (this.isIntentionallyClosed) return;
+
       console.log('WebSocket disconnected:', event.code, event.reason);
       this.config.onDisconnect?.();
-
-      // 의도적으로 닫은 경우가 아니면 재연결 시도
-      if (!this.isIntentionallyClosed) {
-        this.attemptReconnect();
-      }
+      this.attemptReconnect();
     };
   }
 

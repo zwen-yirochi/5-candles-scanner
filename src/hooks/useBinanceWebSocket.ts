@@ -130,6 +130,9 @@ export const useBinanceWebSocket = ({
       return;
     }
 
+    // 심볼/인터벌 전환 시 이전 연결 상태 즉시 초기화
+    setIsConnected(false);
+
     wsClientRef.current = new BinanceWebSocketClient({
       symbol,
       interval,
