@@ -47,36 +47,34 @@ export const ChartEditorToolbar: React.FC = () => {
   }, [activeTool, handlePan, setActiveTool, setEditorMode, setDraftObject, setSelectedId, setCrosshairPosition]);
 
   return (
-    <div className="flex items-center gap-1 px-2 py-1 bg-[#F5F5F0] border-b border-[#D5D5D0]">
+    <div className="flex items-center gap-1.5 px-2 py-1.5 bg-[#F5F5F0] border-b border-[#D5D5D0]">
       {EDITOR_TOOLS.map((tool) => {
         const isActive = activeTool === tool.type;
         return (
           <button
             key={tool.type}
             onClick={() => handleToolSelect(tool.type)}
-            className={`flex items-center gap-1 px-3 py-2 rounded text-xs font-medium min-h-[36px] transition-colors
+            className={`px-2 py-0.5 rounded text-xs transition-colors
               ${isActive
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                ? 'bg-neutral-700 text-neutral-100'
+                : 'bg-neutral-200 text-neutral-500 hover:bg-neutral-300'
               }`}
           >
-            <span>{tool.type === 'hline' ? '—' : '╱'}</span>
-            <span>{tool.label}</span>
+            {tool.label}
           </button>
         );
       })}
 
       <button
         onClick={() => setMagnetEnabled((v) => !v)}
-        className={`flex items-center gap-1 px-3 py-2 rounded text-xs font-medium min-h-[36px] transition-colors
+        className={`px-2 py-0.5 rounded text-xs transition-colors
           ${magnetEnabled
-            ? 'bg-blue-600 text-white'
-            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            ? 'bg-neutral-700 text-neutral-100'
+            : 'bg-neutral-200 text-neutral-500 hover:bg-neutral-300'
           }`}
-        title="마그넷: OHLC 스냅"
+        title="Magnet: snap to OHLC"
       >
-        <span>🧲</span>
-        <span>Magnet</span>
+        Magnet
       </button>
     </div>
   );

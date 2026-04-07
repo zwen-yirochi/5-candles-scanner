@@ -14,7 +14,7 @@ export interface ContextMenuAction {
 
 const extendLeftAction: ContextMenuAction = {
   id: 'extendLeft',
-  label: '왼쪽 연장',
+  label: 'Extend Left',
   icon: '←',
   type: 'toggle',
   isActive: (obj) => !!(obj as TrendlineObject).extendLeft,
@@ -26,7 +26,7 @@ const extendLeftAction: ContextMenuAction = {
 
 const extendRightAction: ContextMenuAction = {
   id: 'extendRight',
-  label: '오른쪽 연장',
+  label: 'Extend Right',
   icon: '→',
   type: 'toggle',
   isActive: (obj) => !!(obj as TrendlineObject).extendRight,
@@ -38,8 +38,8 @@ const extendRightAction: ContextMenuAction = {
 
 const deleteAction: ContextMenuAction = {
   id: 'delete',
-  label: '삭제',
-  icon: '🗑',
+  label: 'Delete',
+  icon: '×',
   type: 'button',
   onAction: () => null,
 };

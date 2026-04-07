@@ -58,7 +58,6 @@ export const useEditorStorage = () => {
   // 마운트 시 초기 심볼 데이터 로드
   useEffect(() => {
     activeSymbolRef.current = symbol;
-    isInitializedRef.current = true;
     setDrawingObjects(loadFromStorage(symbol));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -75,8 +74,12 @@ export const useEditorStorage = () => {
 
   // drawingObjects 변경 시 activeSymbolRef.current 키로 자동 저장
   // (symbol 대신 activeSymbolRef.current 사용 → 심볼 전환 중 잘못된 키에 저장 방지)
+  // 첫 번째 실행(초기 렌더, drawingObjects=[])은 건너뛰고 초기화 플래그만 설정
   useEffect(() => {
-    if (!isInitializedRef.current) return;
+    if (!isInitializedRef.current) {
+      isInitializedRef.current = true;
+      return;
+    }
     saveToStorage(activeSymbolRef.current, drawingObjects);
   }, [drawingObjects]);
 };

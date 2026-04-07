@@ -38,28 +38,28 @@ export const EditorContextMenu: React.FC = () => {
 
   const actions    = CONTEXT_ACTIONS[selectedObj.tool];
   const MENU_WIDTH = 160;
-  const ITEM_H     = 36;
+  const ITEM_H     = 28;
+  const OFFSET     = 8;
   const menuHeight = actions.length * ITEM_H + 8;
 
-  // 수평 clamp: 메뉴가 차트 밖으로 나가지 않도록
-  const clampedX = Math.max(MENU_WIDTH / 2, Math.min(position.x, width - MENU_WIDTH / 2));
+  // 오른쪽 아래에 위치: 클릭 좌표 + offset, 차트 경계를 벗어나지 않도록 clamp
+  const left = Math.max(4, Math.min(position.x + OFFSET, width - MENU_WIDTH - 4));
   // 수직 flip: 아래 공간이 부족하면 위에 표시
-  const above = position.y + menuHeight > height;
+  const above = position.y + OFFSET + menuHeight > height;
   const top   = above
-    ? Math.max(0, position.y - menuHeight - 8)
-    : position.y + 8;
+    ? Math.max(0, position.y - menuHeight - OFFSET)
+    : position.y + OFFSET;
 
   return (
     <div
       style={{
-        position:  'absolute',
-        left:      clampedX,
+        position: 'absolute',
+        left,
         top,
-        transform: 'translateX(-50%)',
-        zIndex:    30,
-        minWidth:  `${MENU_WIDTH}px`,
+        zIndex:   30,
+        minWidth: `${MENU_WIDTH}px`,
       }}
-      className="bg-white border border-gray-200 rounded-lg shadow-lg py-1"
+      className="bg-white border border-gray-300 rounded-lg shadow-sm py-1"
       onPointerDown={(e) => e.stopPropagation()}
     >
       {actions.map((action) => {
@@ -83,18 +83,18 @@ export const EditorContextMenu: React.FC = () => {
                 if (action.type === 'button') close();
               }
             }}
-            className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors
+            className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left transition-colors
               ${action.id === 'delete'
-                ? 'text-red-600 hover:bg-red-50'
+                ? 'text-neutral-400 hover:bg-gray-50'
                 : isActive
-                  ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                  : 'text-gray-700 hover:bg-gray-50'
+                  ? 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                  : 'text-gray-600 hover:bg-gray-50'
               }`}
           >
-            <span className="text-base leading-none">{action.icon}</span>
+            <span className="text-gray-400 leading-none">{action.icon}</span>
             <span>{action.label}</span>
             {action.type === 'toggle' && (
-              <span className="ml-auto text-xs text-gray-400">{isActive ? 'ON' : 'OFF'}</span>
+              <span className="ml-auto text-[10px] text-gray-400">{isActive ? 'on' : ''}</span>
             )}
           </button>
         );
