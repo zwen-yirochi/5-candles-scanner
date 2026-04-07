@@ -20,6 +20,8 @@ export interface TrendlineObject extends BaseDrawingObject {
   tool: 'trendline';
   p1: { index: number; price: number };
   p2: { index: number; price: number };
+  extendLeft?: boolean;   // true = p1 방향으로 차트 왼쪽 끝까지 연장
+  extendRight?: boolean;  // true = p2 방향으로 차트 오른쪽 끝까지 연장
 }
 
 export type DrawingObject = HLineObject | TrendlineObject;
