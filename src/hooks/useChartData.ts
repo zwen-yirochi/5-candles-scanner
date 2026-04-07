@@ -43,6 +43,12 @@ export const useChartData = (): UseChartDataReturn => {
     if (latestCandle) updateCandle(latestCandle);
   }, [latestCandle, updateCandle]);
 
+  // 심볼/인터벌 변경 시 stale 데이터 즉시 제거
+  // → useChartInit이 새 데이터 도착 전에 initializeChart를 호출하는 것을 방지
+  useEffect(() => {
+    setRawData([]);
+  }, [symbol, interval, setRawData]);
+
   // Fetch data
   const fetchData = useCallback(async () => {
     try {
