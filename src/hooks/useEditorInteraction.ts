@@ -89,6 +89,8 @@ export const useEditorInteraction = () => {
   const [draftObject, setDraftObject] = useAtom(draftObjectAtom);
   const domain                        = useAtomValue(chartDomainAtom);
   const range                         = useAtomValue(chartRangeAtom);
+  // Task 4 마그넷 기능을 위해 candles/candlesRef를 미리 구독해 둠
+  // snapToMagnet(pixelX, pixelY, candles, ...) 호출에서 사용됨
   const candles                       = useAtomValue(rawDataAtom);
 
   const editorModeRef  = useRef(editorMode);
